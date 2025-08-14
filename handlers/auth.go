@@ -12,42 +12,45 @@ type AuthHandler struct {
 	Service *services.AuthService
 }
 
-func (h *AuthHandler) AdminSignup(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	json.NewDecoder(r.Body).Decode(&user)
-
-	if user.Role != "admin" {
-		http.Error(w, "Role must be admin", http.StatusForbidden)
-		return
-	}
-
-	err := h.Service.CreateUser(r.Context(),user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(map[string]string{"message": "Admin created"})
-}
-
 func (h *AuthHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
-	// Token verification skipped for brevity
-	var user models.User
-	json.NewDecoder(r.Body).Decode(&user)
-	user.Role = "dealer"
+	w.Header().Set("Content-Type", "application/json")
 
-	err := h.Service.CreateUser(r.Context(),user)
+	var dealer models.Dealer
+	if err := json.NewDecoder(r.Body).Decode(&dealer); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	if dealer.Name == "" || dealer.Phone == "" || dealer.Password == "" ||
+		dealer.OfficeAddress == "" || dealer.ShopName == "" ||
+		dealer.Location == "" || dealer.SubLocation == "" {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+	err := h.Service.CreateDealer(r.Context(), dealer)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "User created"})
 }
 
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var creds models.User
-	json.NewDecoder(r.Body).Decode(&creds)
+func (h *AuthHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-	token, err := h.Service.Login(creds.Phone, creds.Password)
+	var creds models.Dealer
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    if creds.Phone == "" || creds.Password == "" {
+        http.Error(w, "Phone and password are required", http.StatusBadRequest)
+        return
+    }
+
+	token, err := h.Service.LoginDealer(creds.Phone, creds.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -55,13 +58,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func (h *AuthHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-    users, err := h.Service.GetAllUsers(r.Context())
-    if err != nil {
-        http.Error(w, "Failed to fetch users: "+err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(users)
+func (h *AuthHandler) GetAllDealers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	users, err := h.Service.GetAllDealers(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to fetch users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(users)
 }

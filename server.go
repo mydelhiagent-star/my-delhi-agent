@@ -17,7 +17,7 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	client := database.ConnectMongo(cfg.MongoURI)
-	userCollection := client.Database(cfg.MongoDB).Collection("users")
+	dealerCollection := client.Database(cfg.MongoDB).Collection("dealers")
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
 
@@ -25,7 +25,7 @@ func main() {
 	services.InitializeB2Service(ctx)
 
 	authService := &services.AuthService{
-		UserCollection: userCollection,
+		DealerCollection: dealerCollection,
 		JWTSecret:        cfg.JWTSecret,
 	}
 	authHandler := &handlers.AuthHandler{Service: authService}

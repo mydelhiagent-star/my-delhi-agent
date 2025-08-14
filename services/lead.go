@@ -2,7 +2,7 @@ package services
 
 import (
 	"context"
-	"time"
+	
 
 	"myapp/models"
 
@@ -18,8 +18,9 @@ type LeadService struct {
 func (s *LeadService) CreateLead(ctx context.Context,lead models.Lead) (primitive.ObjectID, error) {
 	
 
-	lead.Status = "new"
-	lead.CreatedOn = time.Now()
+	lead.Status = models.LeadStatusNew
+
+	
 
 	res, err := s.LeadCollection.InsertOne(ctx, lead)
 	if err != nil {
@@ -33,24 +34,23 @@ func (s *LeadService) CreateLead(ctx context.Context,lead models.Lead) (primitiv
 	return id, nil
 }
 
-func (s *LeadService) GetLeadByID(id primitive.ObjectID) (models.Lead, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (s *LeadService) GetLeadByID(ctx context.Context,id primitive.ObjectID) (models.Lead, error) {
+	
 
 	var lead models.Lead
 	err := s.LeadCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&lead)
 	return lead, err
 }
 
-func (s *LeadService) GetAllLeads() ([]models.Lead, error) {
-	cursor, err := s.LeadCollection.Find(context.Background(), bson.M{})
+func (s *LeadService) GetAllLeads(ctx context.Context) ([]models.Lead, error) {
+	cursor, err := s.LeadCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(context.Background())
+	
 
 	var leads []models.Lead
-	if err = cursor.All(context.Background(), &leads); err != nil {
+	if err = cursor.All(ctx, &leads); err != nil {
 		return nil, err
 	}
 	return leads, nil

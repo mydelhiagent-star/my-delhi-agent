@@ -1,32 +1,23 @@
 package models
 
 import(
-	"time"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Lead struct{
-	ID               primitive.ObjectID      `json:"id,omitempty" bson:"_id,omitempty"`
-	DealerID         primitive.ObjectID      `json:"dealer_id" bson:"dealer_id"`
-	Name             string                  `json:"name" bson:"name"`
-	Area             string                  `json:"area" bson:"area"`
-	Requirement      string                  `json:"requirement" bson:"requirement"`
-	Status           string                  `json:"status" bson:"status"`
-	CreatedOn        time.Time               `json:"created_on" bson:"created_on"`
+	ID                primitive.ObjectID      `json:"id,omitempty" bson:"_id,omitempty"`
+	Name              string                  `json:"name" bson:"name"`
+	Phone			  string                  `json:"phone" bson:"phone"`
+	Requirement       string                  `json:"requirement" bson:"requirement"`
+	Status            string                  `json:"status" bson:"status"`
+	AadharNumber      string                  `json:"aadhar_number,omitempty" bson:"aadhar_number,omitempty"`
+	AadharPhoto       string                  `json:"aadhar_photo,omitempty" bson:"aadhar_photo,omitempty"`
 }
 
 const (
 	LeadStatusNew              = "new"
-	LeadStatusMatchFound       = "match_found"
-	LeadStatusDealerContacted  = "dealer_contacted"
-	LeadStatusDealInProgress   = "deal_in_progress"
+	LeadStatusInProgress       = "in_progress"
 	LeadStatusSuccess          = "success"
 )
 
-var AllLeadStatuses = []string{
-	LeadStatusNew,
-	LeadStatusMatchFound,
-	LeadStatusDealerContacted,
-	LeadStatusDealInProgress,
-	LeadStatusSuccess,
-}
+

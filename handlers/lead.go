@@ -46,7 +46,7 @@ func (h *LeadHandler) GetLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lead, err := h.Service.GetLeadByID(objID)
+	lead, err := h.Service.GetLeadByID(r.Context(),objID)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Lead not found", http.StatusNotFound)
@@ -61,7 +61,7 @@ func (h *LeadHandler) GetLead(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LeadHandler) GetAllLeads(w http.ResponseWriter, r *http.Request) {
-	leads, err := h.Service.GetAllLeads()
+	leads, err := h.Service.GetAllLeads(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch leads", http.StatusInternalServerError)
 		return
