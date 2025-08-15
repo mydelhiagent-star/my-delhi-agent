@@ -13,7 +13,7 @@ import (
 	 "go.mongodb.org/mongo-driver/bson"
 )
 
-type AuthService struct {
+type DealerService struct {
 	DealerCollection *mongo.Collection
 	JWTSecret      string
 }
@@ -25,21 +25,21 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func (s *AuthService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
+func (d *DealerService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
 	
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
 	dealer.Password = string(hash)
 
-	_, err := s.DealerCollection.InsertOne(ctx, dealer)
+	_, err := d.DealerCollection.InsertOne(ctx, dealer)
 	return err
 }
 
-func (s *AuthService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
+func (d *DealerService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
 	
 
 	var dbUser models.Dealer
-	err := s.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
+	err := d.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
 	if err != nil {
 		return "", errors.New("user not found")
 	}
@@ -59,11 +59,11 @@ func (s *AuthService) LoginDealer(ctx context.Context, phone, password string) (
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.JWTSecret))
+	return token.SignedString([]byte(d.JWTSecret))
 }
 
-func (s *AuthService) GetAllDealers(ctx context.Context) ([]models.Dealer, error) {
-    cursor, err := s.DealerCollection.Find(ctx, bson.M{})
+func (d *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, error) {
+    cursor, err := d.DealerCollection.Find(ctx, bson.M{})
     if err != nil {
         return nil, err
     }

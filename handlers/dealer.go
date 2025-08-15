@@ -8,11 +8,11 @@ import (
 	"myapp/services"
 )
 
-type AuthHandler struct {
-	Service *services.AuthService
+type DealerHandler struct {
+	Service *services.DealerService
 }
 
-func (h *AuthHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
+func (h *DealerHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var dealer models.Dealer
@@ -36,7 +36,7 @@ func (h *AuthHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "User created"})
 }
 
-func (h *AuthHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
+func (h *DealerHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var creds models.Dealer

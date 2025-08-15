@@ -25,11 +25,11 @@ func main() {
 	ctx := context.Background()
 	services.InitializeB2Service(ctx)
 
-	authService := &services.AuthService{
+	dealerService := &services.DealerService{
 		DealerCollection: dealerCollection,
 		JWTSecret:        cfg.JWTSecret,
 	}
-	authHandler := &handlers.AuthHandler{Service: authService}
+	dealerHandler := &handlers.DealerHandler{Service: dealerService}
 
 	leadService := &services.LeadService{
 		LeadCollection: leadCollection,
@@ -46,7 +46,7 @@ func main() {
 
 
 	r := mux.NewRouter()
-	routes.RegisterAuthRoutes(r, authHandler)
+	routes.RegisterAuthRoutes(r, dealerHandler)
 	routes.RegisterLeadRoutes(r,leadHandler,cfg.JWTSecret)
 	routes.RegisterPropertyRoutes(r,propertyHandler,cfg.JWTSecret)
 
