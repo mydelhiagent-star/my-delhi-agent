@@ -33,7 +33,7 @@ func (h *DealerHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User created"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer created"})
 }
 
 func (h *DealerHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
