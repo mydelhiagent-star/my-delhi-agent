@@ -19,12 +19,7 @@ type DealerService struct {
 	JWTSecret      string
 }
 
-type Claims struct {
-	ID    string `json:"id"`
-	Phone string `json:"phone"`
-	Role  string `json:"role"`
-	jwt.RegisteredClaims
-}
+
 
 func (s *DealerService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
 	if !constants.IsValidLocation(dealer.Location){
@@ -52,7 +47,7 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 		return "", errors.New("invalid password")
 	}
 
-	claims := &Claims{
+	claims := &models.Claims{
 		ID:    dbUser.ID.Hex(),
 		Phone: dbUser.Phone,
 		Role:  "dealer",
