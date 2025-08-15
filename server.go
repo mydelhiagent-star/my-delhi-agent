@@ -46,7 +46,7 @@ func main() {
 
 
 	r := mux.NewRouter()
-	routes.RegisterAuthRoutes(r, dealerHandler)
+	routes.RegisterDealerRoutes(r, dealerHandler,cfg.JWTSecret)
 	routes.RegisterLeadRoutes(r,leadHandler,cfg.JWTSecret)
 	routes.RegisterPropertyRoutes(r,propertyHandler,cfg.JWTSecret)
 
