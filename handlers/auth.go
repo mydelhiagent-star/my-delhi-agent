@@ -41,29 +41,23 @@ func (h *AuthHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
 
 	var creds models.Dealer
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-        http.Error(w, "Invalid request body", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
         return
     }
 
     if creds.Phone == "" || creds.Password == "" {
-        http.Error(w, "Phone and password are required", http.StatusBadRequest)
+        w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Phone and password are required"})
         return
     }
 
-	token, err := h.Service.LoginDealer(creds.Phone, creds.Password)
+	token, err := h.Service.LoginDealer(r.Context(), creds.Phone, creds.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-func (h *AuthHandler) GetAllDealers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	users, err := h.Service.GetAllDealers(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to fetch users: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(users)
-}

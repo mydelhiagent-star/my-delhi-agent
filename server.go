@@ -12,6 +12,7 @@ import (
 	
 
 	"github.com/gorilla/mux"
+	h "github.com/gorilla/handlers"
 )
 
 func main() {
@@ -49,6 +50,12 @@ func main() {
 	routes.RegisterLeadRoutes(r,leadHandler,cfg.JWTSecret)
 	routes.RegisterPropertyRoutes(r,propertyHandler,cfg.JWTSecret)
 
+	 corsHandler := h.CORS(
+		h.AllowedOrigins([]string{"http://localhost:5173"}),
+		h.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		h.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)(r)
+
 	log.Printf("🚀 Server running on port %s\n", cfg.Port)
-	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
+	log.Fatal(http.ListenAndServe(":"+cfg.Port, corsHandler))
 }

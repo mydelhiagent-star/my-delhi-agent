@@ -35,9 +35,8 @@ func (s *AuthService) CreateDealer(ctx context.Context,dealer models.Dealer) err
 	return err
 }
 
-func (s *AuthService) LoginDealer(phone, password string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (s *AuthService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
+	
 
 	var dbUser models.Dealer
 	err := s.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
