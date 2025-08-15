@@ -25,21 +25,21 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func (d *DealerService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
+func (s *DealerService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
 	
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
 	dealer.Password = string(hash)
 
-	_, err := d.DealerCollection.InsertOne(ctx, dealer)
+	_, err := s.DealerCollection.InsertOne(ctx, dealer)
 	return err
 }
 
-func (d *DealerService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
+func (s *DealerService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
 	
 
 	var dbUser models.Dealer
-	err := d.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
+	err := s.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
 	if err != nil {
 		return "", errors.New("user not found")
 	}
@@ -59,11 +59,11 @@ func (d *DealerService) LoginDealer(ctx context.Context, phone, password string)
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(d.JWTSecret))
+	return token.SignedString([]byte(s.JWTSecret))
 }
 
-func (d *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, error) {
-    cursor, err := d.DealerCollection.Find(ctx, bson.M{})
+func (s *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, error) {
+    cursor, err := s.DealerCollection.Find(ctx, bson.M{})
     if err != nil {
         return nil, err
     }
@@ -83,3 +83,23 @@ func (d *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, err
     }
     return users, nil
 }
+
+func (s *DealerService) GetDealersByLocation(ctx context.Context, location string) ([]models.Dealer, error) {
+	filter := bson.M{
+		"location": location,
+	}
+
+	cursor, err := s.DealerCollection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var dealers []models.Dealer
+	if err := cursor.All(ctx, &dealers); err != nil {
+		return nil, err
+	}
+
+	return dealers, nil
+}
+

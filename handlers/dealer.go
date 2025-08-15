@@ -61,3 +61,23 @@ func (h *DealerHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
+func (h *DealerHandler) GetDealersByLocation(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	location := r.URL.Query().Get("location")
+	if location == "" {
+		http.Error(w, "Location is required", http.StatusBadRequest)
+		return
+	}
+
+	dealers, err := h.Service.GetDealersByLocation(r.Context(), location)
+	if err != nil {
+		http.Error(w, "Failed to fetch dealers: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(dealers)
+}
+
+
+
