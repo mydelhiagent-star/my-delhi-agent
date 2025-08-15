@@ -5,12 +5,13 @@ import (
 	"errors"
 	"time"
 
+	"myapp/constants"
 	"myapp/models"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
-	 "go.mongodb.org/mongo-driver/bson"
 )
 
 type DealerService struct {
@@ -26,7 +27,9 @@ type Claims struct {
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
-	
+	if !constants.IsValidLocation(dealer.Location){
+		return errors.New("invalid location")
+	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
 	dealer.Password = string(hash)
@@ -85,6 +88,9 @@ func (s *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, err
 }
 
 func (s *DealerService) GetDealersByLocation(ctx context.Context, location string) ([]models.Dealer, error) {
+	if !constants.IsValidLocation(location){
+		return nil,errors.New("invalid location")
+	}
 	filter := bson.M{
 		"location": location,
 	}
