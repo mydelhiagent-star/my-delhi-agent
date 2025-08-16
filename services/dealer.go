@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -84,10 +85,11 @@ func (s *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, err
 
 func (s *DealerService) GetDealersByLocation(ctx context.Context, location string) ([]models.Dealer, error) {
 	if !constants.IsValidLocation(location){
-		return nil,errors.New("invalid location")
+		return nil,errors.New("invalid sublocation")
 	}
+
 	filter := bson.M{
-		"location": location,
+		"sub_location": location,
 	}
 
 	cursor, err := s.DealerCollection.Find(ctx, filter)
@@ -103,4 +105,59 @@ func (s *DealerService) GetDealersByLocation(ctx context.Context, location strin
 
 	return dealers, nil
 }
+
+func (s *DealerService) GetLocationsWithSubLocations(ctx context.Context) ([]models.LocationWithSubLocations, error) {
+	// Fetch all dealers with location present in constants.Locations
+	cursor, err := s.DealerCollection.Find(
+		ctx,
+		bson.M{"location": bson.M{"$in": constants.Locations}},
+		options.Find().SetProjection(bson.M{
+			"location":     1,
+			"sub_location": 1,
+			"_id":          0, // exclude _id if not needed
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Map: location -> set of sublocations
+	locationMap := make(map[string]map[string]struct{})
+
+	for cursor.Next(ctx) {
+		var dealer struct {
+			Location    string `bson:"location"`
+			SubLocation string `bson:"sub_location"`
+		}
+		if err := cursor.Decode(&dealer); err != nil {
+			return nil, err
+		}
+
+		if dealer.Location != "" && dealer.SubLocation != "" {
+			if _, ok := locationMap[dealer.Location]; !ok {
+				locationMap[dealer.Location] = make(map[string]struct{})
+			}
+			locationMap[dealer.Location][dealer.SubLocation] = struct{}{}
+		}
+	}
+
+	// Prepare result
+	result := make([]models.LocationWithSubLocations, 0, len(constants.Locations))
+	for _, loc := range constants.Locations {
+		subLocs := make([]string, 0)
+		if subs, ok := locationMap[loc]; ok {
+			for sub := range subs {
+				subLocs = append(subLocs, sub)
+			}
+		}
+		result = append(result, models.LocationWithSubLocations{
+			Location:    loc,
+			SubLocation: subLocs,
+		})
+	}
+
+	return result, nil
+}
+
 

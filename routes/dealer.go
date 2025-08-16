@@ -8,16 +8,22 @@ import (
 )
 
 func RegisterDealerRoutes(r *mux.Router, h *handlers.DealerHandler, jwtSecret string) {
-   
+
+	// Public
 	public := r.PathPrefix("/auth/dealers").Subrouter()
 	public.HandleFunc("/register", h.CreateDealer).Methods("POST")
 	public.HandleFunc("/login", h.LoginDealer).Methods("POST")
 
-	
-	private := r.PathPrefix("/dealers").Subrouter()
-    authMW := middlewares.JWTAuth(jwtSecret)
-	private.Use(authMW)
-    private.HandleFunc("/by-location", h.GetDealersByLocation).Methods("GET")
-    
-	
+	// Dealer
+	dealer := r.PathPrefix("/dealers").Subrouter()
+	dealer.Use(middlewares.JWTAuth(jwtSecret))
+	dealer.Use(middlewares.RequireRole("dealer"))
+
+	// Admin
+	admin := r.PathPrefix("/admin/dealers").Subrouter()
+	// admin.Use(middlewares.JWTAuth(jwtSecret))
+	// admin.Use(middlewares.RequireRole("admin"))
+	admin.HandleFunc("/by-sublocation", h.GetDealersBySubLocation).Methods("GET")
+	admin.HandleFunc("/locations/sublocations",h.GetLocationsWithSubLocations).Methods("GET")
+
 }

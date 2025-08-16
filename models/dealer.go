@@ -14,3 +14,8 @@ type Dealer struct {
 	Location string `json:"location" bson:"location"`
 	SubLocation string `json:"sub_location" bson:"sub_location"`
 }
+
+type LocationWithSubLocations struct {
+    Location string   `json:"location"`
+    SubLocation []string `json:"sub_location"`
+}

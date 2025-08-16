@@ -58,22 +58,32 @@ func (h *DealerHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]string{"token": token})
 }
 
-func (h *DealerHandler) GetDealersByLocation(w http.ResponseWriter, r *http.Request) {
+func (h *DealerHandler) GetDealersBySubLocation(w http.ResponseWriter, r *http.Request) {
 	
 
-	location := r.URL.Query().Get("location")
-	if location == "" {
+    subLocation := r.URL.Query().Get("subLocation")
+	if subLocation == "" {
 		response.Error(w, http.StatusBadRequest, "Location is required")
 		return
 	}
 
-	dealers, err := h.Service.GetDealersByLocation(r.Context(), location)
+	dealers, err := h.Service.GetDealersByLocation(r.Context(), subLocation)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to fetch dealers: "+err.Error())
 		return
 	}
 
 	response.JSON(w, http.StatusOK, dealers)
+}
+
+func (h *DealerHandler) GetLocationsWithSubLocations(w http.ResponseWriter, r *http.Request){
+	result,err := h.Service.GetLocationsWithSubLocations(r.Context())
+	
+	if err != nil {
+		response.Error(w,http.StatusInternalServerError,"Failed to fetch locations sublocations: "+err.Error())
+	}
+
+	response.JSON(w,http.StatusOK,result)
 }
 
 
