@@ -83,13 +83,10 @@ func (s *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, err
     return users, nil
 }
 
-func (s *DealerService) GetDealersByLocation(ctx context.Context, location string) ([]models.Dealer, error) {
-	if !constants.IsValidLocation(location){
-		return nil,errors.New("invalid sublocation")
-	}
+func (s *DealerService) GetDealersByLocation(ctx context.Context, subLocation string) ([]models.Dealer, error) {
 
 	filter := bson.M{
-		"sub_location": location,
+		"sub_location": subLocation,
 	}
 
 	cursor, err := s.DealerCollection.Find(ctx, filter)
