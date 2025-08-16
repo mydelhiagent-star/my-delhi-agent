@@ -9,6 +9,7 @@ import (
 	"myapp/models"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,6 +18,7 @@ import (
 
 type DealerService struct {
 	DealerCollection *mongo.Collection
+	TokenCollection *mongo.Collection
 	JWTSecret      string
 }
 
@@ -53,13 +55,33 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 		Phone: dbUser.Phone,
 		Role:  "dealer",
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
-		},
+            IssuedAt: jwt.NewNumericDate(time.Now()),  // unique timestamp
+			ID:        uuid.New().String(),             // unique jti
+        },
+		
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.JWTSecret))
+	tokenString, err := token.SignedString([]byte(s.JWTSecret))
+	if err != nil {
+		return "", err
+	}
+	_, err = s.TokenCollection.InsertOne(ctx, bson.M{
+		"token": tokenString,
+		"user":  dbUser.ID.Hex(),
+	})
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
 }
+
+func (s *DealerService) LogoutDealer(ctx context.Context, token string) error {
+	_, err := s.TokenCollection.DeleteOne(ctx, bson.M{"token": token})
+	return err
+}
+
+
 
 func (s *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, error) {
     cursor, err := s.DealerCollection.Find(ctx, bson.M{})

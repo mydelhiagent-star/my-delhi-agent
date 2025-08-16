@@ -16,6 +16,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	h "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -24,12 +25,14 @@ func main() {
 	dealerCollection := client.Database(cfg.MongoDB).Collection("dealers")
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
+	tokenCollection := client.Database(cfg.MongoDB).Collection("token")
 
 	ctx := context.Background()
 	services.InitializeB2Service(ctx)
 
 	dealerService := &services.DealerService{
 		DealerCollection: dealerCollection,
+		TokenCollection: tokenCollection,
 		JWTSecret:        cfg.JWTSecret,
 	}
 	dealerHandler := &handlers.DealerHandler{Service: dealerService}
@@ -42,19 +45,16 @@ func main() {
 	propertyService := &services.PropertyService{
 		PropertyCollection: propertyCollection,
 	}
-	
 
 	propertyHandler := &handlers.PropertyHandler{Service: propertyService}
 
-
-
 	r := mux.NewRouter()
 
-	r.HandleFunc("/admin/login",func (w http.ResponseWriter, r *http.Request){
-	    email := r.FormValue("email")
+	r.HandleFunc("/admin/login", func(w http.ResponseWriter, r *http.Request) {
+		email := r.FormValue("email")
 		password := r.FormValue("password")
 
-		if email != "mydelhiagent@gmail.com" || password != "anygroup"{
+		if email != "mydelhiagent@gmail.com" || password != "anygroup" {
 			response.Error(w, http.StatusUnauthorized, "invalid credentials")
 			return
 		}
@@ -63,12 +63,14 @@ func main() {
 			Phone: "9873462385",
 			Role:  "admin",
 			RegisteredClaims: jwt.RegisteredClaims{
+				IssuedAt:  jwt.NewNumericDate(time.Now()), // unique timestamp
+				ID:        uuid.New().String(),
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(1 * time.Hour)),
 			},
 		}
-	
+
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		tokenString,err := token.SignedString([]byte(cfg.JWTSecret))
+		tokenString, err := token.SignedString([]byte(cfg.JWTSecret))
 		if err != nil {
 			response.Error(w, http.StatusUnauthorized, err.Error())
 			return
@@ -77,11 +79,11 @@ func main() {
 
 	}).Methods("POST")
 
-	routes.RegisterDealerRoutes(r, dealerHandler,cfg.JWTSecret)
-	routes.RegisterLeadRoutes(r,leadHandler,cfg.JWTSecret)
-	routes.RegisterPropertyRoutes(r,propertyHandler,cfg.JWTSecret)
+	routes.RegisterDealerRoutes(r, dealerHandler, cfg.JWTSecret)
+	routes.RegisterLeadRoutes(r, leadHandler, cfg.JWTSecret)
+	routes.RegisterPropertyRoutes(r, propertyHandler, cfg.JWTSecret)
 
-	 corsHandler := h.CORS(
+	corsHandler := h.CORS(
 		h.AllowedOrigins([]string{"http://localhost:5173"}),
 		h.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
 		h.AllowedHeaders([]string{"Content-Type", "Authorization"}),
