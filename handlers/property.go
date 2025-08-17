@@ -1,15 +1,16 @@
 package handlers
 
 import (
-    "encoding/json"
-    "net/http"
+	"encoding/json"
+	"net/http"
 
-    "myapp/models"
-    "myapp/services"
+	"myapp/middlewares"
+	"myapp/models"
+	"myapp/services"
 
-    "github.com/gorilla/mux"
-    "go.mongodb.org/mongo-driver/bson/primitive"
-    "go.mongodb.org/mongo-driver/mongo"
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type PropertyHandler struct {
@@ -130,6 +131,52 @@ func (h *PropertyHandler) GetUploadURLsHandler(w http.ResponseWriter, r *http.Re
     }
     json.NewEncoder(w).Encode(uploads)
 }
+
+func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.Request) {
+	var dealerID primitive.ObjectID
+	var err error
+
+	// Get dealer_id from query parameter
+	dealerIDParam := r.URL.Query().Get("dealer_id")
+
+	if dealerIDParam != "" {
+		// Admin or external call with dealer_id in query
+		dealerID, err = primitive.ObjectIDFromHex(dealerIDParam)
+		if err != nil {
+			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
+			return
+		}
+	} else {
+		// No dealer_id in query → must be dealer calling their own
+		role, _ := r.Context().Value(middlewares.UserRoleKey).(string)
+		userIDStr, _ := r.Context().Value(middlewares.UserIDKey).(string)
+
+		if role != "dealer" {
+			http.Error(w, "Dealer ID is required", http.StatusBadRequest)
+			return
+		}
+
+		dealerID, err = primitive.ObjectIDFromHex(userIDStr)
+		if err != nil {
+			http.Error(w, "Invalid dealer ID from token", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	// Fetch properties
+	properties, err := h.Service.GetPropertiesByDealer(r.Context(), dealerID)
+	if err != nil {
+		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(properties)
+}
+
+
+
+
 
 
 

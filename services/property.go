@@ -57,5 +57,22 @@ func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Proper
     return properties, nil
 }
 
+func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID) ([]models.Property, error) {
+	filter := bson.M{"dealer_id": dealerID}
+
+	cursor, err := s.PropertyCollection.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var properties []models.Property
+	if err := cursor.All(ctx, &properties); err != nil {
+		return nil, err
+	}
+
+	return properties,nil 
+}
+
 
 

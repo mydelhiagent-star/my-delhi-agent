@@ -179,4 +179,38 @@ func (s *DealerService) GetLocationsWithSubLocations(ctx context.Context) ([]mod
 	return result, nil
 }
 
+// In services/dealer_service.go
+
+func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation string) ([]map[string]interface{}, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.M{"sub_location": subLocation}}},
+		{
+			{Key: "$lookup", Value: bson.M{
+				"from":         "property",   
+				"localField":   "_id",        
+				"foreignField": "dealer_id",  
+				"as":           "properties",
+			}},
+		},
+	}
+
+	cursor, err := s.DealerCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []map[string]interface{}
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	if len(results) == 0 {
+		return nil, nil
+	}
+
+	return results, nil // one dealer per subLocation
+}
+
+
 

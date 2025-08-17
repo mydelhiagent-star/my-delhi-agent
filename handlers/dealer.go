@@ -86,5 +86,29 @@ func (h *DealerHandler) GetLocationsWithSubLocations(w http.ResponseWriter, r *h
 	response.JSON(w,http.StatusOK,result)
 }
 
+func (h *DealerHandler) GetDealerWithProperties(w http.ResponseWriter, r *http.Request){
+    subLocation := r.URL.Query().Get("subLocation")
+
+	if subLocation == ""{
+		response.Error(w, http.StatusBadRequest, "subLocation is required")
+		return
+	}
+
+	dealerWithProps, err := h.Service.GetDealerWithProperties(r.Context(), subLocation)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to fetch dealer with properties: "+err.Error())
+		return
+	}
+
+	// If no dealer found
+	if dealerWithProps == nil {
+		response.Error(w, http.StatusNotFound, "No dealer found for the given subLocation")
+		return
+	}
+
+	response.JSON(w, http.StatusOK, dealerWithProps)
+
+	
+}
 
 
