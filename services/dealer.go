@@ -42,7 +42,7 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 	var dbUser models.Dealer
 	err := s.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
 	if err != nil {
-		return "", errors.New("user not found")
+		return "", errors.New("invalid phone number")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(password))
