@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	
 	"log"
 	"myapp/config"
 	"myapp/database"
@@ -27,8 +27,8 @@ func main() {
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
 	tokenCollection := client.Database(cfg.MongoDB).Collection("token")
 
-	ctx := context.Background()
-	services.InitializeB2Service(ctx)
+	
+	
 
 	dealerService := &services.DealerService{
 		DealerCollection: dealerCollection,

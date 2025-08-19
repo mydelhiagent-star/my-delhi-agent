@@ -117,21 +117,6 @@ type UploadRequest struct {
 }
 
 
-
-func (h *PropertyHandler) GetUploadURLsHandler(w http.ResponseWriter, r *http.Request) {
-    var req UploadRequest
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
-        return
-    }
-	uploads, err := services.GenerateSignedUploadURLs(r.Context(),req.Files)
-    if err != nil {
-        http.Error(w, "Failed to generate upload URLs: "+err.Error(), http.StatusInternalServerError)
-        return
-    }
-    json.NewEncoder(w).Encode(uploads)
-}
-
 func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.Request) {
 	var dealerID primitive.ObjectID
 	var err error
