@@ -1,7 +1,6 @@
 package main
 
 import (
-	
 	"log"
 	"myapp/config"
 	"myapp/database"
@@ -11,12 +10,13 @@ import (
 	"myapp/routes"
 	"myapp/services"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	h "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -54,7 +54,10 @@ func main() {
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 
-		if email != "mydelhiagent@gmail.com" || password != "anygroup" {
+		adminEmail := os.Getenv("ADMIN_EMAIL")
+		adminPassword := os.Getenv("ADMIN_PASSWORD")
+
+		if email != adminEmail || password != adminPassword {
 			response.Error(w, http.StatusUnauthorized, "invalid credentials")
 			return
 		}
@@ -84,10 +87,12 @@ func main() {
 	routes.RegisterPropertyRoutes(r, propertyHandler, cfg.JWTSecret)
 
 	corsHandler := h.CORS(
-		h.AllowedOrigins([]string{"http://localhost:5173"}),
+		h.AllowedOrigins([]string{"*"}),
 		h.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
 		h.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 	)(r)
+
+	
 
 	log.Printf("🚀 Server running on port %s\n", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, corsHandler))
