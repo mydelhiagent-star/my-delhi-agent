@@ -10,7 +10,6 @@ import (
 	"myapp/routes"
 	"myapp/services"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,6 +21,7 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	client := database.ConnectMongo(cfg.MongoURI)
+	
 	dealerCollection := client.Database(cfg.MongoDB).Collection("dealers")
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
@@ -54,8 +54,8 @@ func main() {
 		email := r.FormValue("email")
 		password := r.FormValue("password")
 
-		adminEmail := os.Getenv("ADMIN_EMAIL")
-		adminPassword := os.Getenv("ADMIN_PASSWORD")
+		adminEmail := cfg.AdminEmail
+		adminPassword := cfg.AdminPassword
 
 		if email != adminEmail || password != adminPassword {
 			response.Error(w, http.StatusUnauthorized, "invalid credentials")

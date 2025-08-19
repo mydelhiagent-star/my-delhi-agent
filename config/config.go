@@ -12,6 +12,15 @@ type Config struct {
 	MongoDB   string
 	JWTSecret string
 	Port      string
+	RedisURI  string
+	RedisUsername string
+	RedisPassword string
+	AdminEmail string
+	AdminPassword string
+	CloudflareAccountID       string
+	CloudflareAccessKeyID     string
+	CloudflareAccessKeySecret string
+	CloudflareBucketName      string
 }
 
 func LoadConfig() Config {
@@ -25,5 +34,14 @@ func LoadConfig() Config {
 		MongoDB:   os.Getenv("MONGO_DB"),
 		JWTSecret: os.Getenv("JWT_SECRET"),
 		Port:      os.Getenv("PORT"),
+		RedisURI:  os.Getenv("REDIS_URI"),
+		RedisUsername: os.Getenv("REDIS_USERNAME"),
+		RedisPassword: os.Getenv("REDIS_PASSWORD"),
+		AdminEmail: os.Getenv("ADMIN_EMAIL"),
+		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+		CloudflareAccountID: os.Getenv("CLOUDFLARE_ACCOUNT_ID"),
+		CloudflareAccessKeyID: os.Getenv("CLOUDFLARE_ACCESS_KEY_ID"),
+		CloudflareAccessKeySecret: os.Getenv("CLOUDFLARE_ACCESS_KEY_SECRET"),
+		CloudflareBucketName: os.Getenv("CLOUDFLARE_BUCKET_NAME"),
 	}
 }
