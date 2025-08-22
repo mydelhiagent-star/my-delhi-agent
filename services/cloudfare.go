@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -31,12 +30,9 @@ type R2Config struct {
 }
 
 // NewCloudflareR2Service creates a new Cloudflare R2 service
-func NewCloudflareR2Service() (*CloudflareR2Service, error) {
-	AccountID :=       os.Getenv("CLOUDFLARE_ACCOUNT_ID")
-	AccessKeyID :=   os.Getenv("CLOUDFLARE_ACCESS_KEY_ID")
-	AccessKeySecret := os.Getenv("CLOUDFLARE_ACCESS_KEY_SECRET")
-	BucketName :=   os.Getenv("CLOUDFLARE_BUCKET_NAME")
-
+func NewCloudflareR2Service(AccountID string,AccessKeyID string,AccessKeySecret string,BucketName string) (*CloudflareR2Service, error) {
+	
+	
 	// Validate required fields
 	if AccountID == "" || AccessKeyID == "" || 
 	   AccessKeySecret == "" || BucketName == "" {
@@ -51,6 +47,7 @@ func NewCloudflareR2Service() (*CloudflareR2Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
+	
 
 	// Create S3 client with R2 endpoint
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {

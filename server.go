@@ -21,6 +21,14 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	client := database.ConnectMongo(cfg.MongoURI)
+
+	_, err := services.NewCloudflareR2Service(cfg.CloudflareAccountID,cfg.CloudflareAccessKeyID,cfg.CloudflareAccessKeySecret,cfg.CloudflareBucketName)
+	if err != nil {
+		log.Printf("⚠️  R2 service failed: %v", err)
+		
+	} else {
+		log.Printf("✅ R2 service connected successfully")
+	}
 	
 	dealerCollection := client.Database(cfg.MongoDB).Collection("dealers")
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")

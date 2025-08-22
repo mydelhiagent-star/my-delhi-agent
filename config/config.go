@@ -39,9 +39,9 @@ func LoadConfig() Config {
 		RedisPassword: os.Getenv("REDIS_PASSWORD"),
 		AdminEmail: os.Getenv("ADMIN_EMAIL"),
 		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
-		CloudflareAccountID: os.Getenv("CLOUDFLARE_ACCOUNT_ID"),
-		CloudflareAccessKeyID: os.Getenv("CLOUDFLARE_ACCESS_KEY_ID"),
-		CloudflareAccessKeySecret: os.Getenv("CLOUDFLARE_ACCESS_KEY_SECRET"),
-		CloudflareBucketName: os.Getenv("CLOUDFLARE_BUCKET_NAME"),
+		CloudflareAccountID: os.Getenv("CLOUDFARE_ACCOUNT_ID"),
+		CloudflareAccessKeyID: os.Getenv("CLOUDFARE_ACCESS_KEY_ID"),
+		CloudflareAccessKeySecret: os.Getenv("CLOUDFARE_ACCESS_KEY_SECRET"),
+		CloudflareBucketName: os.Getenv("CLOUDFARE_BUCKET_NAME"),
 	}
 }
