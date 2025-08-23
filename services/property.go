@@ -17,9 +17,9 @@ type PropertyService struct {
 
 }
 
-func (s *PropertyService) CreateProperty(property models.Property) (primitive.ObjectID, error) {
+func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
     property.ID = primitive.NewObjectID()
-    _, err := s.PropertyCollection.InsertOne(context.Background(), property)
+    _, err := s.PropertyCollection.InsertOne(ctx, property)
     return property.ID, err
 }
 

@@ -30,31 +30,27 @@ type R2Config struct {
 }
 
 // NewCloudflareR2Service creates a new Cloudflare R2 service
-func NewCloudflareR2Service(AccountID string,AccessKeyID string,AccessKeySecret string,BucketName string) (*CloudflareR2Service, error) {
-	
-	
+func NewCloudflareR2Service(AccountID string, AccessKeyID string, AccessKeySecret string, BucketName string) (*CloudflareR2Service, error) {
+
 	// Validate required fields
-	if AccountID == "" || AccessKeyID == "" || 
-	   AccessKeySecret == "" || BucketName == "" {
+	if AccountID == "" || AccessKeyID == "" ||
+		AccessKeySecret == "" || BucketName == "" {
 		return nil, fmt.Errorf("missing required Cloudflare R2 configuration")
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-    config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(AccessKeyID, AccessKeySecret, "")),
-    config.WithRegion("auto"),
-    )
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(AccessKeyID, AccessKeySecret, "")),
+		config.WithRegion("auto"),
+	)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
-	
 
 	// Create S3 client with R2 endpoint
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(fmt.Sprintf("https://%s.r2.cloudflarestorage.com", AccountID))
 	})
-
-	
 
 	return &CloudflareR2Service{
 		client:     client,
@@ -62,8 +58,6 @@ func NewCloudflareR2Service(AccountID string,AccessKeyID string,AccessKeySecret 
 		accountID:  AccountID,
 	}, nil
 }
-
-
 
 // GeneratePresignedURL generates a presigned URL for uploading objects
 func (s *CloudflareR2Service) GeneratePresignedURL(ctx context.Context, key string, expires time.Duration) (string, error) {
@@ -179,7 +173,7 @@ func (s *CloudflareR2Service) ListObjects(ctx context.Context, prefix string, ma
 	}
 
 	input := &s3.ListObjectsV2Input{
-		Bucket:  aws.String(s.bucketName),
+		Bucket: aws.String(s.bucketName),
 		// MaxKeys: maxKeys,
 	}
 

@@ -22,25 +22,22 @@ func main() {
 	cfg := config.LoadConfig()
 	client := database.ConnectMongo(cfg.MongoURI)
 
-	_, err := services.NewCloudflareR2Service(cfg.CloudflareAccountID,cfg.CloudflareAccessKeyID,cfg.CloudflareAccessKeySecret,cfg.CloudflareBucketName)
+	r2Service, err := services.NewCloudflareR2Service(cfg.CloudflareAccountID, cfg.CloudflareAccessKeyID, cfg.CloudflareAccessKeySecret, cfg.CloudflareBucketName)
 	if err != nil {
 		log.Printf("⚠️  R2 service failed: %v", err)
-		
+
 	} else {
 		log.Printf("✅ R2 service connected successfully")
 	}
-	
+
 	dealerCollection := client.Database(cfg.MongoDB).Collection("dealers")
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
 	tokenCollection := client.Database(cfg.MongoDB).Collection("token")
 
-	
-	
-
 	dealerService := &services.DealerService{
 		DealerCollection: dealerCollection,
-		TokenCollection: tokenCollection,
+		TokenCollection:  tokenCollection,
 		JWTSecret:        cfg.JWTSecret,
 	}
 	dealerHandler := &handlers.DealerHandler{Service: dealerService}
@@ -54,7 +51,11 @@ func main() {
 		PropertyCollection: propertyCollection,
 	}
 
-	propertyHandler := &handlers.PropertyHandler{Service: propertyService}
+	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL}
+
+	cloudfareHandler := &handlers.CloudfareHandler{
+		Service: r2Service,
+	}
 
 	r := mux.NewRouter()
 
@@ -93,14 +94,13 @@ func main() {
 	routes.RegisterDealerRoutes(r, dealerHandler, cfg.JWTSecret)
 	routes.RegisterLeadRoutes(r, leadHandler, cfg.JWTSecret)
 	routes.RegisterPropertyRoutes(r, propertyHandler, cfg.JWTSecret)
+	routes.RegisterCloudFareRoutes(r, cloudfareHandler, cfg.JWTSecret)
 
 	corsHandler := h.CORS(
 		h.AllowedOrigins([]string{"*"}),
 		h.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
 		h.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 	)(r)
-
-	
 
 	log.Printf("🚀 Server running on port %s\n", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, corsHandler))
