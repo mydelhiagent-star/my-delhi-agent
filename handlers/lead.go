@@ -6,6 +6,7 @@ import (
 	"myapp/services"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -24,8 +25,6 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Name and phone are required", http.StatusBadRequest)
 		return
 	}
-	
-	
 
 	id, err := h.Service.CreateLead(r.Context(), lead)
 	if err != nil {
@@ -122,8 +121,6 @@ func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-
 	err = h.Service.UpdateLead(r.Context(), objID, updateData)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -137,5 +134,43 @@ func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Lead updated successfully",
+	})
+}
+
+func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	leadID := vars["leadID"]
+	if leadID == "" {
+		http.Error(w, "Missing lead ID", http.StatusBadRequest)
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
+		return
+	}
+
+	var propertyInterest models.PropertyInterest
+	if err := json.NewDecoder(r.Body).Decode(&propertyInterest); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate property interest
+	if propertyInterest.PropertyID.IsZero() || propertyInterest.DealerID.IsZero() {
+		http.Error(w, "Property ID and dealer ID are required", http.StatusBadRequest)
+		return
+	}
+
+	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
+	if err != nil {
+		http.Error(w, "Failed to add property interest: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Property interest added successfully",
 	})
 }
