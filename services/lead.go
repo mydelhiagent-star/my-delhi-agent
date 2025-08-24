@@ -82,14 +82,13 @@ func (s *LeadService) UpdateLead(ctx context.Context, id primitive.ObjectID, upd
 
 func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyInterest models.PropertyInterest) error {
 	// Set timestamps and status
-	
+
 	propertyInterest.Status = models.LeadStatusViewed
-	
 
 	_, err := s.LeadCollection.UpdateOne(ctx,
 		bson.M{"_id": leadID},
-		bson.M{"$push": bson.M{"properties": propertyInterest}},
+		bson.M{"$addToSet": bson.M{"properties": propertyInterest}},
 	)
-	
+
 	return err
 }

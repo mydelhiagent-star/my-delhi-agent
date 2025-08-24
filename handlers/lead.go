@@ -165,12 +165,12 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 
 	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
 	if err != nil {
-		http.Error(w, "Failed to add property interest: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to add property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Property interest added successfully",
+		"message": "Property added successfully",
 	})
 }
