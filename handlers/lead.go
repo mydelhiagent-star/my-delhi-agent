@@ -24,16 +24,8 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Name and phone are required", http.StatusBadRequest)
 		return
 	}
-	if len(lead.Properties) == 0 {
-		http.Error(w, "At least one property interest is required", http.StatusBadRequest)
-		return
-	}
-	for i := range lead.Properties {
-		if lead.Properties[i].PropertyID.IsZero() || lead.Properties[i].DealerID.IsZero() {
-			http.Error(w, "Invalid property_id or dealer_id", http.StatusBadRequest)
-			return
-		}
-	}
+	
+	
 
 	id, err := h.Service.CreateLead(r.Context(), lead)
 	if err != nil {

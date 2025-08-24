@@ -8,7 +8,7 @@ type Lead struct {
 	ID         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Name       string             `json:"name" bson:"name"`
 	Phone      string             `json:"phone" bson:"phone"`
-	Properties []PropertyInterest `json:"properties" bson:"properties"`
+	Properties []PropertyInterest `json:"properties,omitempty" bson:"properties,omitempty"`
 
 	AadharNumber string `json:"aadhar_number,omitempty" bson:"aadhar_number,omitempty"`
 	AadharPhoto  string `json:"aadhar_photo,omitempty" bson:"aadhar_photo,omitempty"`
