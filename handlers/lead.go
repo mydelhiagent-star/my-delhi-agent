@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
 	"myapp/models"
 	"myapp/services"
+	"net/http"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -19,8 +20,22 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	if lead.Name == "" || lead.Phone == "" {
+		http.Error(w, "Name and phone are required", http.StatusBadRequest)
+		return
+	}
+	if len(lead.Properties) == 0 {
+		http.Error(w, "At least one property interest is required", http.StatusBadRequest)
+		return
+	}
+	for i := range lead.Properties {
+		if lead.Properties[i].PropertyID.IsZero() || lead.Properties[i].DealerID.IsZero() {
+			http.Error(w, "Invalid property_id or dealer_id", http.StatusBadRequest)
+			return
+		}
+	}
 
-	id, err := h.Service.CreateLead(r.Context(),lead)
+	id, err := h.Service.CreateLead(r.Context(), lead)
 	if err != nil {
 		http.Error(w, "Failed to create lead", http.StatusInternalServerError)
 		return
@@ -46,7 +61,7 @@ func (h *LeadHandler) GetLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lead, err := h.Service.GetLeadByID(r.Context(),objID)
+	lead, err := h.Service.GetLeadByID(r.Context(), objID)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Lead not found", http.StatusNotFound)
@@ -80,9 +95,9 @@ func (h *LeadHandler) GetAllLeadsByDealerID(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 		return
 	}
-	
-	leads, err := h.Service.GetAllLeadsByDealerID(r.Context(),objID)
-	
+
+	leads, err := h.Service.GetAllLeadsByDealerID(r.Context(), objID)
+
 	if err != nil {
 		http.Error(w, "Failed to fetch leads", http.StatusInternalServerError)
 		return
@@ -115,15 +130,9 @@ func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := updateData["area"]; ok {
-		updateData["status"] = models.LeadStatusNew
-	}
-	if _, ok := updateData["requirement"]; ok {
-		updateData["status"] = models.LeadStatusNew
-	}
+	
 
-
-	err = h.Service.UpdateLead(r.Context(),objID, updateData)
+	err = h.Service.UpdateLead(r.Context(), objID, updateData)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Lead not found", http.StatusNotFound)
@@ -138,6 +147,3 @@ func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
 		"message": "Lead updated successfully",
 	})
 }
-
-
-

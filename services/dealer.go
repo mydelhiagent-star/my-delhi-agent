@@ -18,26 +18,31 @@ import (
 
 type DealerService struct {
 	DealerCollection *mongo.Collection
-	TokenCollection *mongo.Collection
-	JWTSecret      string
+	TokenCollection  *mongo.Collection
+	JWTSecret        string
 }
 
-
-
-func (s *DealerService) CreateDealer(ctx context.Context,dealer models.Dealer) error {
-	if !constants.IsValidLocation(dealer.Location){
+func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
+	if !constants.IsValidLocation(dealer.Location) {
 		return errors.New("invalid location")
+	}
+	existingDealer := models.Dealer{}
+	err := s.DealerCollection.FindOne(ctx, bson.M{"phone": dealer.Phone}).Decode(&existingDealer)
+	if err == nil {
+		return errors.New("phone number already exists")
+	}
+	if err != mongo.ErrNoDocuments {
+		return errors.New("database error checking phone number" + err.Error())
 	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
 	dealer.Password = string(hash)
 
-	_, err := s.DealerCollection.InsertOne(ctx, dealer)
+	_, err = s.DealerCollection.InsertOne(ctx, dealer)
 	return err
 }
 
 func (s *DealerService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
-	
 
 	var dbUser models.Dealer
 	err := s.DealerCollection.FindOne(ctx, map[string]string{"phone": phone}).Decode(&dbUser)
@@ -55,10 +60,9 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 		Phone: dbUser.Phone,
 		Role:  "dealer",
 		RegisteredClaims: jwt.RegisteredClaims{
-            IssuedAt: jwt.NewNumericDate(time.Now()),  // unique timestamp
-			ID:        uuid.New().String(),             // unique jti
-        },
-		
+			IssuedAt: jwt.NewNumericDate(time.Now()), // unique timestamp
+			ID:       uuid.New().String(),            // unique jti
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -81,28 +85,26 @@ func (s *DealerService) LogoutDealer(ctx context.Context, token string) error {
 	return err
 }
 
-
-
 func (s *DealerService) GetAllDealers(ctx context.Context) ([]models.Dealer, error) {
-    cursor, err := s.DealerCollection.Find(ctx, bson.M{})
-    if err != nil {
-        return nil, err
-    }
-    defer cursor.Close(ctx)
+	cursor, err := s.DealerCollection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
 
-    var users []models.Dealer
-    for cursor.Next(ctx) {
-        var user models.Dealer
-        if err := cursor.Decode(&user); err != nil {
-            return nil, err
-        }
-        users = append(users, user)
-    }
+	var users []models.Dealer
+	for cursor.Next(ctx) {
+		var user models.Dealer
+		if err := cursor.Decode(&user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
 
-    if err := cursor.Err(); err != nil {
-        return nil, err
-    }
-    return users, nil
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (s *DealerService) GetDealersByLocation(ctx context.Context, subLocation string) ([]models.Dealer, error) {
@@ -186,9 +188,9 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 		{{Key: "$match", Value: bson.M{"sub_location": subLocation}}},
 		{
 			{Key: "$lookup", Value: bson.M{
-				"from":         "property",   
-				"localField":   "_id",        
-				"foreignField": "dealer_id",  
+				"from":         "property",
+				"localField":   "_id",
+				"foreignField": "dealer_id",
 				"as":           "properties",
 			}},
 		},
@@ -211,6 +213,3 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 
 	return results, nil // one dealer per subLocation
 }
-
-
-
