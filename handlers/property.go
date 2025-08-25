@@ -97,7 +97,7 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var updates models.Property
+	var updates models.PropertyUpdate
 	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return

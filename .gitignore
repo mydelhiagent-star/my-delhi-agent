@@ -1,2 +1,4 @@
-env.json
+.env
 .vscode/
+__debug_bin*
+
