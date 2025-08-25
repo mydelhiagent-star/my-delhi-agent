@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type LeadService struct {
@@ -91,4 +92,30 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.
 	)
 
 	return err
+}
+
+func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limit int) ([]models.Lead, error) {
+	// ← CALCULATE skip value for pagination
+	skip := (page - 1) * limit
+
+	// ← GET total count first
+
+	// ← SET pagination options
+	options := options.Find()
+	options.SetSort(bson.D{{Key: "_id", Value: -1}}) // Newest first
+	options.SetLimit(int64(limit))
+	options.SetSkip(int64(skip))
+
+	cursor, err := s.LeadCollection.Find(ctx, filter, options)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var leads []models.Lead
+	if err = cursor.All(ctx, &leads); err != nil {
+		return nil, err
+	}
+
+	return leads, nil
 }

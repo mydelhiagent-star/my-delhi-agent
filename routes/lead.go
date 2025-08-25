@@ -18,5 +18,5 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 	adminRouter.HandleFunc("/", h.CreateLead).Methods("POST")
 	adminRouter.HandleFunc("/", h.GetAllLeads).Methods("GET")
 	adminRouter.HandleFunc("/{leadID}/properties", h.AddPropertyInterest).Methods("POST")
-
+	adminRouter.HandleFunc("/search", h.SearchLeads).Methods("GET")
 }

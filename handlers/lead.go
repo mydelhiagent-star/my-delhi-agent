@@ -5,8 +5,10 @@ import (
 	"myapp/models"
 	"myapp/services"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -172,5 +174,81 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Property added successfully",
+	})
+}
+
+func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
+	// ← BUILD filter dynamically from query parameters
+	filter := bson.M{}
+
+	// Get all query parameters
+	queryParams := r.URL.Query()
+
+	for key, values := range queryParams {
+		if len(values) > 0 && values[0] != "" {
+			switch key {
+			case "name":
+				// Case-insensitive name search
+				filter["name"] = bson.M{"$regex": primitive.Regex{Pattern: values[0], Options: "i"}}
+			case "phone":
+				// Exact phone match
+				filter["phone"] = values[0]
+			case "aadhar_number":
+				// Exact aadhar match
+				filter["aadhar_number"] = values[0]
+			case "property_id":
+				// Search in properties array
+				if objectID, err := primitive.ObjectIDFromHex(values[0]); err == nil {
+					filter["properties.property_id"] = objectID
+				}
+			case "dealer_id":
+				// Search in properties array
+				if objectID, err := primitive.ObjectIDFromHex(values[0]); err == nil {
+					filter["properties.dealer_id"] = objectID
+				}
+			case "status":
+				// Search in properties array
+				filter["properties.status"] = values[0]
+
+			case "has_properties":
+				// Check if lead has properties
+				if values[0] == "true" {
+					filter["properties"] = bson.M{"$exists": true, "$ne": []interface{}{}}
+				} else if values[0] == "false" {
+					filter["properties"] = bson.M{"$exists": false}
+				}
+			}
+		}
+	}
+
+	// ← GET pagination parameters
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
+
+	page := 1
+	limit := 20
+
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l
+		}
+	}
+
+	// ← SEARCH leads with filter and pagination
+	leads, err := h.Service.SearchLeads(r.Context(), filter, page, limit)
+	if err != nil {
+		http.Error(w, "Failed to search leads: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"leads": leads,
 	})
 }

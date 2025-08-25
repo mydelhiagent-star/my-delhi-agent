@@ -21,10 +21,10 @@ type PropertyInterest struct {
 }
 
 const (
-	LeadStatusViewed        = "viewed"
-	LeadStatusInterested    = "interested"
-	LeadStatusBooked        = "booked"
-	LeadStatusCancelled     = "cancelled"
-	LeadStatusFailed        = "failed"
-	LeadStatusUninterested  = "uninterested"
+	LeadStatusViewed       = "viewed"
+	LeadStatusInterested   = "interested"
+	LeadStatusBooked       = "booked"
+	LeadStatusCancelled    = "cancelled"
+	LeadStatusFailed       = "failed"
+	LeadStatusUninterested = "uninterested"
 )
