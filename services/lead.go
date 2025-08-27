@@ -120,7 +120,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 	return leads, nil
 }
 
-func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) (*[]models.Property, error) {
+func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) ([]models.Property, error) {
 	// ← BUILD the aggregation pipeline
 	pipeline := mongo.Pipeline{
 		// Stage 1: Match the specific lead
@@ -133,7 +133,6 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 			"foreignField": "_id",
 			"as":           "populated_properties",
 		}}},
-		
 	}
 
 	// ← EXECUTE the aggregation pipeline
@@ -153,5 +152,5 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 		return nil, mongo.ErrNoDocuments
 	}
 
-	return &result.PopulatedProperties, nil
+	return result.PopulatedProperties, nil
 }
