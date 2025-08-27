@@ -99,7 +99,9 @@ func (h *LeadHandler) GetAllLeadsByDealerID(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
-	leadID := r.URL.Query().Get("id")
+	vars := mux.Vars(r)
+	leadID := vars["leadID"]
+	
 	if leadID == "" {
 		http.Error(w, "Missing lead ID", http.StatusBadRequest)
 		return
