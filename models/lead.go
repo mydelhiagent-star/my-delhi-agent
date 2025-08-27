@@ -12,6 +12,8 @@ type Lead struct {
 
 	AadharNumber string `json:"aadhar_number,omitempty" bson:"aadhar_number,omitempty"`
 	AadharPhoto  string `json:"aadhar_photo,omitempty" bson:"aadhar_photo,omitempty"`
+
+	PopulatedProperties []Property `json:"populated_properties,omitempty" bson:"populated_properties,omitempty"`
 }
 
 type PropertyInterest struct {
@@ -28,3 +30,5 @@ const (
 	LeadStatusFailed       = "failed"
 	LeadStatusUninterested = "uninterested"
 )
+
+// Add these structs to your existing models/lead.go

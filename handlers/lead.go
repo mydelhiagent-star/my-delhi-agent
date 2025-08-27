@@ -252,3 +252,31 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 		"leads": leads,
 	})
 }
+
+func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	leadID := vars["leadID"]
+
+	if leadID == "" {
+		http.Error(w, "Missing lead ID", http.StatusBadRequest)
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(leadID)
+
+	if err != nil {
+		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
+		return
+	}
+
+	lead, err := h.Service.GetLeadPropertyDetails(r.Context(), objID)
+
+	if err != nil {
+		http.Error(w, "Failed to fetch lead with details", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(lead)
+}
