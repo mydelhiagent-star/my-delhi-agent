@@ -11,8 +11,8 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 	authMW := middlewares.JWTAuth(jwtSecret)
 	leadRouter := r.PathPrefix("/leads").Subrouter()
 	leadRouter.Use(authMW)
-
-	
+	leadRouter.HandleFunc("/search", h.SearchLeads).Methods("GET")
+	leadRouter.HandleFunc("/{leadID}/property-details", h.GetLeadPropertyDetails).Methods("GET")
 
 	// Admin-only route
 	adminRouter := leadRouter.PathPrefix("/admin").Subrouter()
@@ -21,8 +21,5 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 	adminRouter.HandleFunc("/", h.GetAllLeads).Methods("GET")
 	adminRouter.HandleFunc("/{leadID}", h.UpdateLead).Methods("PUT")
 	adminRouter.HandleFunc("/{leadID}/properties", h.AddPropertyInterest).Methods("POST")
-	adminRouter.HandleFunc("/search", h.SearchLeads).Methods("GET")
-	adminRouter.HandleFunc("/{leadID}/property-details", h.GetLeadPropertyDetails).Methods("GET")
-
 
 }
