@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"myapp/middlewares"
 	"myapp/models"
 	"myapp/services"
 	"net/http"
@@ -99,7 +100,9 @@ func (h *LeadHandler) GetAllLeadsByDealerID(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
-	leadID := r.URL.Query().Get("id")
+	vars := mux.Vars(r)
+	leadID := vars["leadID"]
+
 	if leadID == "" {
 		http.Error(w, "Missing lead ID", http.StatusBadRequest)
 		return
@@ -178,8 +181,25 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 }
 
 func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
+
+	userID := r.Context().Value(middlewares.UserIDKey).(string)
+	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
+
 	// ← BUILD filter dynamically from query parameters
 	filter := bson.M{}
+
+	if userRole == "dealer" {
+		dealerID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
+			return
+		}
+		filter["properties.dealer_id"] = dealerID
+		if len(r.URL.Query()) > 0 {
+			http.Error(w, "Dealers cannot use query parameters", http.StatusForbidden)
+			return
+		}
+	}
 
 	// Get all query parameters
 	queryParams := r.URL.Query()
@@ -246,9 +266,76 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to search leads: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	filteredLeads := make([]map[string]interface{}, 0)
+
+	if userRole == "dealer" {
+
+		for _, lead := range leads {
+			// Create filtered lead with only allowed fields
+			filteredLead := map[string]interface{}{
+				"id":         lead.ID,
+				"name":       lead.Name,
+				"properties": lead.Properties,
+			}
+
+			filteredLeads = append(filteredLeads, filteredLead)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"leads": filteredLeads,
+		})
+		return
+
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"leads": leads,
 	})
+}
+
+func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	leadID := vars["leadID"]
+
+	if leadID == "" {
+		http.Error(w, "Missing lead ID", http.StatusBadRequest)
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(leadID)
+
+	if err != nil {
+		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
+		return
+	}
+
+	properties, err := h.Service.GetLeadPropertyDetails(r.Context(), objID)
+
+	if err != nil {
+		http.Error(w, "Failed to fetch lead with details", http.StatusInternalServerError)
+		return
+	}
+
+	userID := r.Context().Value(middlewares.UserIDKey).(string)
+    userRole := r.Context().Value(middlewares.UserRoleKey).(string)
+
+	if userRole == "dealer" {
+		filteredProperties := make([]models.Property, 0)
+		dealerID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
+			return
+		}
+		for _, property := range properties {
+			if property.DealerID == dealerID {
+				filteredProperties = append(filteredProperties, property)
+			}
+		}
+		properties = filteredProperties
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(properties)
 }
