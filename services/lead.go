@@ -134,6 +134,20 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 			"foreignField": "_id",
 			"as":           "populated_properties",
 		}}},
+
+		{{Key: "$addFields", Value: bson.M{
+            "populated_properties": bson.M{
+                "$filter": bson.M{
+                    "input": "$populated_properties",
+                    "cond": bson.M{
+                        "$ne": []interface{}{
+                            "$$this.is_deleted",
+                            true,
+                        },
+                    },
+                },
+            },
+        }}},
 	}
 
 	// ← EXECUTE the aggregation pipeline
@@ -179,15 +193,14 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 			"populated_properties.sold":       bson.M{"$ne": true},
 		}}},
 		{{Key: "$lookup", Value: bson.M{
-            "from":         "dealers",
-            "localField":   "properties.dealer_id",
-            "foreignField": "_id",
-            "as":           "dealer_info",
-        }}},
-        
-        // Stage 6: Unwind dealer array (should be single item)
-        {{Key: "$unwind", Value: "$dealer_info"}},
-        
+			"from":         "dealers",
+			"localField":   "properties.dealer_id",
+			"foreignField": "_id",
+			"as":           "dealer_info",
+		}}},
+
+		// Stage 6: Unwind dealer array (should be single item)
+		{{Key: "$unwind", Value: "$dealer_info"}},
 	}
 
 	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline)
