@@ -58,7 +58,10 @@ func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Proper
 }
 
 func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID) ([]models.Property, error) {
-	filter := bson.M{"dealer_id": dealerID, "is_deleted": false}
+	filter := bson.M{"dealer_id": dealerID,"$or": []bson.M{
+        {"is_deleted": false},           // Field exists and is false
+        {"is_deleted": bson.M{"$exists": false}}, // Field doesn't exist
+    },}
 
 	cursor, err := s.PropertyCollection.Find(ctx, filter)
 	if err != nil {
