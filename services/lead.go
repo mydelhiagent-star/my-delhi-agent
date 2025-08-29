@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"myapp/models"
 
@@ -153,4 +154,52 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 	}
 
 	return result.PopulatedProperties, nil
+}
+
+func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$lookup", Value: bson.M{
+			"from":         "property",
+			"localField":   "properties.property_id",
+			"foreignField": "_id",
+			"as":           "populated_properties",
+		}}},
+		{{Key: "$unwind", Value: "$properties"}},
+		{{Key: "$unwind", Value: "$populated_properties"}},
+		{{Key: "$match", Value: bson.M{
+			"$expr": bson.M{
+				"$eq": []string{
+					"$properties.property_id",
+					"$populated_properties._id",
+				},
+			},
+		}}},
+		{{Key: "$match", Value: bson.M{
+			"populated_properties.is_deleted": true,
+			"populated_properties.sold":       bson.M{"$ne": true},
+		}}},
+		{{Key: "$lookup", Value: bson.M{
+            "from":         "dealers",
+            "localField":   "properties.dealer_id",
+            "foreignField": "_id",
+            "as":           "dealer_info",
+        }}},
+        
+        // Stage 6: Unwind dealer array (should be single item)
+        {{Key: "$unwind", Value: "$dealer_info"}},
+        
+	}
+
+	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var result []bson.M
+	if err = cursor.All(ctx, &result); err != nil {
+		return nil, fmt.Errorf("failed to decode results: %w", err)
+	}
+
+	return result, nil
 }

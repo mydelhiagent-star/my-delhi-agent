@@ -25,7 +25,7 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 
 func (s *PropertyService) GetPropertyByID(id primitive.ObjectID) (*models.Property, error) {
 	var property models.Property
-	err := s.PropertyCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&property)
+	err := s.PropertyCollection.FindOne(context.Background(), bson.M{"_id": id, "is_deleted": false}).Decode(&property)
 	if err != nil {
 		return nil, err
 	}
@@ -33,13 +33,13 @@ func (s *PropertyService) GetPropertyByID(id primitive.ObjectID) (*models.Proper
 }
 
 func (s *PropertyService) UpdateProperty(id primitive.ObjectID, updates models.PropertyUpdate) error {
-	update := bson.M{"$set": updates}
+	update := bson.M{"$set": updates, "is_deleted": false}
 	_, err := s.PropertyCollection.UpdateByID(context.Background(), id, update)
 	return err
 }
 
 func (s *PropertyService) DeleteProperty(id primitive.ObjectID) error {
-	_, err := s.PropertyCollection.DeleteOne(context.Background(), bson.M{"_id": id})
+	_, err := s.PropertyCollection.UpdateOne(context.Background(), bson.M{"_id": id}, bson.M{"$set": bson.M{"is_deleted": true}})
 	return err
 }
 
@@ -58,7 +58,7 @@ func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Proper
 }
 
 func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID) ([]models.Property, error) {
-	filter := bson.M{"dealer_id": dealerID}
+	filter := bson.M{"dealer_id": dealerID, "is_deleted": false}
 
 	cursor, err := s.PropertyCollection.Find(ctx, filter)
 	if err != nil {

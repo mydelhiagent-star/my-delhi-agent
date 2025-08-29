@@ -319,7 +319,7 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 	}
 
 	userID := r.Context().Value(middlewares.UserIDKey).(string)
-    userRole := r.Context().Value(middlewares.UserRoleKey).(string)
+	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
 
 	if userRole == "dealer" {
 		filteredProperties := make([]models.Property, 0)
@@ -338,4 +338,17 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(properties)
+}
+
+func (h *LeadHandler) GetConflictingProperties(w http.ResponseWriter, r *http.Request) {
+
+	conflictingProperties, err := h.Service.GetConflictingProperties(r.Context())
+
+	if err != nil {
+		http.Error(w, "Failed to fetch conflicting properties", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(conflictingProperties)
 }
