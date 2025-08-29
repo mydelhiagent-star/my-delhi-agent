@@ -33,7 +33,7 @@ func (s *PropertyService) GetPropertyByID(id primitive.ObjectID) (*models.Proper
 }
 
 func (s *PropertyService) UpdateProperty(id primitive.ObjectID, updates models.PropertyUpdate) error {
-	update := bson.M{"$set": updates, "is_deleted": false}
+	update := bson.M{"$set": updates}
 	_, err := s.PropertyCollection.UpdateByID(context.Background(), id, update)
 	return err
 }
