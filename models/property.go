@@ -16,7 +16,8 @@ type Property struct {
 	OwnerName       string             `json:"owner_name,omitempty" bson:"owner_name,omitempty"`
 	OwnerPhone      string             `json:"owner_phone,omitempty" bson:"owner_phone,omitempty"`
 	NearestLandmark string             `json:"nearest_landmark" bson:"nearest_landmark"`
-	SoldBy          string             `json:"sold_by,omitempty" bson:"sold_by,omitempty"`
+	IsDeleted       bool               `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
+	Sold            bool               `json:"sold,omitempty" bson:"sold,omitempty"`
 }
 
 type PropertyUpdate struct {
@@ -30,4 +31,6 @@ type PropertyUpdate struct {
 	Videos          *[]string `json:"videos,omitempty" bson:"videos,omitempty"`
 	OwnerName       *string   `json:"owner_name,omitempty" bson:"owner_name,omitempty"`
 	OwnerPhone      *string   `json:"owner_phone,omitempty" bson:"owner_phone,omitempty"`
+	Sold            *bool     `json:"sold,omitempty" bson:"sold,omitempty"`
+	IsDeleted       *bool     `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
 }
