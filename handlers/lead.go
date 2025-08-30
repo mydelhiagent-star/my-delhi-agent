@@ -342,15 +342,18 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
 
 	if userRole == "dealer" {
-		filteredProperties := make([]models.Property, 0)
+		filteredProperties := make([]bson.M, 0)  // ← Change to []bson.M
 		dealerID, err := primitive.ObjectIDFromHex(userID)
 		if err != nil {
 			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 			return
 		}
 		for _, property := range properties {
-			if property.DealerID == dealerID {
-				filteredProperties = append(filteredProperties, property)
+			// ← Handle ObjectID type correctly
+			if propDealerID, ok := property["dealer_id"].(primitive.ObjectID); ok {
+				if propDealerID == dealerID {
+					filteredProperties = append(filteredProperties, property)
+				}
 			}
 		}
 		properties = filteredProperties

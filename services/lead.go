@@ -135,7 +135,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 	return leads, nil
 }
 
-func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) ([]models.Property, error) {
+func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) ([]bson.M, error) {
 	// ← BUILD the aggregation pipeline
 	pipeline := mongo.Pipeline{
 		// Stage 1: Match the specific lead
@@ -149,18 +149,50 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 			"as":           "populated_properties",
 		}}},
 
+		// Stage 3: Add fields to combine property details with interest status
 		{{Key: "$addFields", Value: bson.M{
-			"populated_properties": bson.M{
-				"$filter": bson.M{
-					"input": "$populated_properties",
-					"cond": bson.M{
-						"$ne": []interface{}{
-							"$$this.is_deleted",
-							true,
+			"properties_with_status": bson.M{
+				"$map": bson.M{
+					"input": "$properties",
+					"as":    "prop",
+					"in": bson.M{
+						"$mergeObjects": bson.A{
+							"$$prop",
+							bson.M{
+								"$arrayElemAt": bson.A{
+									bson.M{
+										"$filter": bson.M{
+											"input": "$populated_properties",
+											"cond": bson.M{
+												"$eq": bson.A{"$$this._id", "$$prop.property_id"},
+											},
+										},
+									},
+									0,
+								},
+							},
 						},
 					},
 				},
 			},
+		}}},
+
+		// Stage 4: Filter out deleted properties
+		{{Key: "$addFields", Value: bson.M{
+			"properties_with_status": bson.M{
+				"$filter": bson.M{
+					"input": "$properties_with_status",
+					"cond": bson.M{
+						"$ne": []interface{}{"$$this.is_deleted", true},
+					},
+				},
+			},
+		}}},
+
+		// Stage 5: Project only the properties array
+		{{Key: "$project", Value: bson.M{
+			"_id": 0,
+			"properties": "$properties_with_status",
 		}}},
 	}
 
@@ -171,17 +203,27 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 	}
 	defer cursor.Close(ctx)
 
-	// ← DECODE the result
-	var result models.Lead
-	if cursor.Next(ctx) {
-		if err := cursor.Decode(&result); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, mongo.ErrNoDocuments
+	// ← DECODE directly into bson.M array
+	var result []bson.M
+	if err = cursor.All(ctx, &result); err != nil {
+		return nil, err
 	}
 
-	return result.PopulatedProperties, nil
+	// ← EXTRACT properties from first result
+	if len(result) > 0 {
+		if properties, ok := result[0]["properties"].(bson.A); ok {
+			// Convert bson.A to []bson.M
+			var propertiesArray []bson.M
+			for _, prop := range properties {
+				if propMap, ok := prop.(bson.M); ok {
+					propertiesArray = append(propertiesArray, propMap)
+				}
+			}
+			return propertiesArray, nil
+		}
+	}
+
+	return []bson.M{}, nil
 }
 
 func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, error) {
