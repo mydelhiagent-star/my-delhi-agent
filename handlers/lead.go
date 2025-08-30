@@ -352,3 +352,27 @@ func (h *LeadHandler) GetConflictingProperties(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conflictingProperties)
 }
+
+func (h *LeadHandler) DeleteLead(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	leadID := vars["leadID"]
+	if leadID == "" {
+		http.Error(w, "Missing lead ID", http.StatusBadRequest)
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
+		return
+	}
+
+	err = h.Service.DeleteLead(r.Context(), objID)
+
+	if err != nil {
+		http.Error(w, "Failed to delete lead", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Lead deleted successfully"})
+}

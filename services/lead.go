@@ -82,6 +82,11 @@ func (s *LeadService) UpdateLead(ctx context.Context, id primitive.ObjectID, upd
 	return err
 }
 
+func (s *LeadService) DeleteLead(ctx context.Context, id primitive.ObjectID) error {
+	_, err := s.LeadCollection.DeleteOne(ctx, bson.M{"_id": id})
+	return err
+}
+
 func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyInterest models.PropertyInterest) error {
 	// Set timestamps and status
 
