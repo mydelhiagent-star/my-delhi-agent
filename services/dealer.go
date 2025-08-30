@@ -194,6 +194,16 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 				"as":           "properties",
 			}},
 		},
+		{{Key: "$addFields", Value: bson.M{
+			"properties": bson.M{
+				"$filter": bson.M{
+					"input": "$properties",
+					"cond": bson.M{
+						"$ne": []interface{}{"$$this.is_deleted", true},
+					},
+				},
+			},
+		}}},
 	}
 
 	cursor, err := s.DealerCollection.Aggregate(ctx, pipeline)
