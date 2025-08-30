@@ -90,7 +90,7 @@ func (s *LeadService) DeleteLead(ctx context.Context, id primitive.ObjectID) err
 func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyInterest models.PropertyInterest) error {
 	// Set timestamps and status
 
-	propertyInterest.Status = models.LeadStatusViewed
+	propertyInterest.Status = models.LeadStatusView
 
 	_, err := s.LeadCollection.UpdateOne(ctx,
 		bson.M{"_id": leadID},
@@ -100,7 +100,7 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.
 	return err
 }
 
-func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limit int) ([]models.Lead, error) {
+func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Lead, error) {
 	// ← CALCULATE skip value for pagination
 	skip := (page - 1) * limit
 
@@ -111,6 +111,15 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 	options.SetSort(bson.D{{Key: "_id", Value: -1}}) // Newest first
 	options.SetLimit(int64(limit))
 	options.SetSkip(int64(skip))
+
+	if len(fields) > 0 {
+		projection := bson.M{}
+		for _, field := range fields {
+			projection[field] = 1
+		}
+		projection["_id"] = 1
+		options.SetProjection(projection)
+	}
 
 	cursor, err := s.LeadCollection.Find(ctx, filter, options)
 	if err != nil {
@@ -141,18 +150,18 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 		}}},
 
 		{{Key: "$addFields", Value: bson.M{
-            "populated_properties": bson.M{
-                "$filter": bson.M{
-                    "input": "$populated_properties",
-                    "cond": bson.M{
-                        "$ne": []interface{}{
-                            "$$this.is_deleted",
-                            true,
-                        },
-                    },
-                },
-            },
-        }}},
+			"populated_properties": bson.M{
+				"$filter": bson.M{
+					"input": "$populated_properties",
+					"cond": bson.M{
+						"$ne": []interface{}{
+							"$$this.is_deleted",
+							true,
+						},
+					},
+				},
+			},
+		}}},
 	}
 
 	// ← EXECUTE the aggregation pipeline
@@ -220,4 +229,9 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 	}
 
 	return result, nil
+}
+
+func (s *LeadService) UpdatePropertyStatusByID(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string) error {
+	_, err := s.LeadCollection.UpdateOne(ctx, bson.M{"_id": leadID, "properties.property_id": propertyID}, bson.M{"$set": bson.M{"properties.$.status": status}})
+	return err
 }
