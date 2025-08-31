@@ -188,10 +188,20 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 				},
 			},
 		}}},
+		{{Key: "$addFields", Value: bson.M{
+			"properties_with_status": bson.M{
+				"$sortArray": bson.M{
+					"input": "$properties_with_status",
+					"sortBy": bson.M{
+						"_id": -1,  // ← Sort by ObjectID descending (latest first)
+					},
+				},
+			},
+		}}},
 
 		// Stage 5: Project only the properties array
 		{{Key: "$project", Value: bson.M{
-			"_id": 0,
+			"_id":        0,
 			"properties": "$properties_with_status",
 		}}},
 	}
