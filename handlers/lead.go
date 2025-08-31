@@ -338,11 +338,23 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	if status := r.URL.Query().Get("status"); status != "" {
+		filteredByStatus := make([]bson.M, 0)
+		for _, property := range properties {
+			if propStatus, ok := property["status"].(string); ok {
+				if propStatus == status {
+					filteredByStatus = append(filteredByStatus, property)
+				}
+			}
+		}
+		properties = filteredByStatus
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(string)
 	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
 
 	if userRole == "dealer" {
-		filteredProperties := make([]bson.M, 0)  // ← Change to []bson.M
+		filteredProperties := make([]bson.M, 0) // ← Change to []bson.M
 		dealerID, err := primitive.ObjectIDFromHex(userID)
 		if err != nil {
 			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
