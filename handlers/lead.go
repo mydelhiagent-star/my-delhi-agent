@@ -279,13 +279,16 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 
 		for _, lead := range leads {
 			// Create filtered lead with only allowed fields
-			filteredLead := map[string]interface{}{
-				"id":         lead.ID,
-				"name":       lead.Name,
-				"properties": lead.Properties,
+			if len(lead.Properties) > 0 {
+				// Create filtered lead with only allowed fields
+				filteredLead := map[string]interface{}{
+					"id":         lead.ID,
+					"name":       lead.Name,
+					"properties": lead.Properties,
+				}
+	
+				filteredLeads = append(filteredLeads, filteredLead)
 			}
-
-			filteredLeads = append(filteredLeads, filteredLead)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
