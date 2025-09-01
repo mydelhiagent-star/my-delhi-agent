@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	
 )
 
 type LeadService struct {
@@ -104,24 +104,71 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 	// ← CALCULATE skip value for pagination
 	skip := (page - 1) * limit
 
-	// ← GET total count first
+	// ← BUILD aggregation pipeline
+	pipeline := mongo.Pipeline{
+		// Stage 1: Match leads based on filter
+		{{Key: "$match", Value: filter}},
 
-	// ← SET pagination options
-	options := options.Find()
-	options.SetSort(bson.D{{Key: "_id", Value: -1}}) // Newest first
-	options.SetLimit(int64(limit))
-	options.SetSkip(int64(skip))
+		// Stage 2: Lookup properties to check if they're deleted
+		{{Key: "$lookup", Value: bson.M{
+			"from":         "property",
+			"localField":   "properties.property_id",
+			"foreignField": "_id",
+			"as":           "property_details",
+		}}},
 
+		// Stage 3: Filter out deleted properties
+		{{Key: "$addFields", Value: bson.M{
+			"properties": bson.M{
+				"$filter": bson.M{
+					"input": "$properties",
+					"as":    "prop",
+					"cond": bson.M{
+						"$not": bson.M{
+							"$anyElementTrue": bson.A{
+								bson.M{
+									"$map": bson.M{
+										"input": bson.M{
+											"$filter": bson.M{
+												"input": "$property_details",
+												"cond": bson.M{
+													"$eq": bson.A{"$$this._id", "$$prop.property_id"},
+												},
+											},
+										},
+										"as": "matched_prop",
+										"in": "$$matched_prop.is_deleted",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}}},
+
+		// Stage 4: Sort by creation date (newest first)
+		{{Key: "$sort", Value: bson.M{"_id": -1}}},
+
+		// Stage 5: Skip for pagination
+		{{Key: "$skip", Value: int64(skip)}},
+
+		// Stage 6: Limit for pagination
+		{{Key: "$limit", Value: int64(limit)}},
+	}
+
+	// ← ADD projection if fields are specified
 	if len(fields) > 0 {
 		projection := bson.M{}
 		for _, field := range fields {
 			projection[field] = 1
 		}
 		projection["_id"] = 1
-		options.SetProjection(projection)
+		pipeline = append(pipeline, bson.D{{Key: "$project", Value: projection}})
 	}
 
-	cursor, err := s.LeadCollection.Find(ctx, filter, options)
+	// ← EXECUTE aggregation
+	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
