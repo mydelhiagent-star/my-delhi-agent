@@ -17,6 +17,7 @@ import (
 
 type LeadHandler struct {
 	Service *services.LeadService
+	PropertyService *services.PropertyService
 }
 
 func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
@@ -469,6 +470,15 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 			http.Error(w, "Failed to update property status: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
+	}
+	if updateData.Status == "converted" {
+		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
+			Sold: &[]bool{true}[0], 
+		})
+		if err != nil {
+			http.Error(w, "Failed to update property sold status", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")

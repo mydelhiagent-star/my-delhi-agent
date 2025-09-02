@@ -10,7 +10,8 @@ type Property struct {
 	Title           string             `json:"title" bson:"title"`
 	Description     string             `json:"description" bson:"description"`
 	Address         string             `json:"address" bson:"address"`
-	Price           float64            `json:"price" bson:"price"`
+	MinPrice    float64                 `json:"min_price" bson:"min_price"`
+	MaxPrice    float64                 `json:"max_price" bson:"max_price"`
 	Photos          []string           `json:"photos,omitempty" bson:"photos,omitempty"`
 	Videos          []string           `json:"videos,omitempty" bson:"videos,omitempty"`
 	OwnerName       string             `json:"owner_name,omitempty" bson:"owner_name,omitempty"`
@@ -25,7 +26,8 @@ type PropertyUpdate struct {
 	Address         *string   `json:"address,omitempty" bson:"address,omitempty"`
 	NearestLandmark *string   `json:"nearest_landmark,omitempty" bson:"nearest_landmark,omitempty"`
 	SoldBy          *string   `json:"sold_by,omitempty" bson:"sold_by,omitempty"`
-	Price           *float64  `json:"price,omitempty" bson:"price,omitempty"`
+	MinPrice        *float64  `json:"min_price,omitempty" bson:"min_price,omitempty"`
+	MaxPrice        *float64  `json:"max_price,omitempty" bson:"max_price,omitempty"`
 	Description     *string   `json:"description,omitempty" bson:"description,omitempty"`
 	Photos          *[]string `json:"photos,omitempty" bson:"photos,omitempty"`
 	Videos          *[]string `json:"videos,omitempty" bson:"videos,omitempty"`
