@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -20,6 +22,7 @@ type PropertyInterest struct {
 	PropertyID primitive.ObjectID `json:"property_id" bson:"property_id"`
 	DealerID   primitive.ObjectID `json:"dealer_id" bson:"dealer_id"` // ← ADD THIS
 	Status     string             `json:"status" bson:"status"`
+	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
 }
 
 const (
