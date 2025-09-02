@@ -34,6 +34,7 @@ func main() {
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
 	tokenCollection := client.Database(cfg.MongoDB).Collection("token")
+	counterCollection := client.Database(cfg.MongoDB).Collection("counters")
 
 	dealerService := &services.DealerService{
 		DealerCollection: dealerCollection,
@@ -45,10 +46,15 @@ func main() {
 	leadService := &services.LeadService{
 		LeadCollection: leadCollection,
 	}
-	leadHandler := &handlers.LeadHandler{Service: leadService}
 
 	propertyService := &services.PropertyService{
 		PropertyCollection: propertyCollection,
+		CounterCollection:  counterCollection,
+	}
+
+	leadHandler := &handlers.LeadHandler{
+		Service:         leadService,
+		PropertyService: propertyService,
 	}
 
 	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL}
