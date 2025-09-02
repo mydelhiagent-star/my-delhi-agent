@@ -111,4 +111,14 @@ func (h *DealerHandler) GetDealerWithProperties(w http.ResponseWriter, r *http.R
 	
 }
 
+func (h *DealerHandler) GetAllDealers(w http.ResponseWriter, r *http.Request){
+	dealers, err := h.Service.GetAllDealers(r.Context())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to fetch dealers: "+err.Error())
+		return
+	}
+	response.JSON(w, http.StatusOK, dealers)
+}
+
+
 

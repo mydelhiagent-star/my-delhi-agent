@@ -26,5 +26,6 @@ func RegisterDealerRoutes(r *mux.Router, h *handlers.DealerHandler, jwtSecret st
 	admin.HandleFunc("/by-sublocation", h.GetDealersBySubLocation).Methods("GET")
 	admin.HandleFunc("/locations/sublocations",h.GetLocationsWithSubLocations).Methods("GET")
 	admin.HandleFunc("/with-properties",h.GetDealerWithProperties).Methods("GET")
+	admin.HandleFunc("/",h.GetAllDealers).Methods("GET")
 
 }
