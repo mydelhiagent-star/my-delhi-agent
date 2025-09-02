@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Assume you have a GCPService with these methods:
@@ -15,12 +16,54 @@ import (
 
 type PropertyService struct {
 	PropertyCollection *mongo.Collection
+	CounterCollection  *mongo.Collection
 }
 
 func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
+	// ← GENERATE unique property number
+	propertyNumber, err := s.getNextPropertyNumber(ctx)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+
 	property.ID = primitive.NewObjectID()
-	_, err := s.PropertyCollection.InsertOne(ctx, property)
+	property.PropertyNumber = propertyNumber
+
+	_, err = s.PropertyCollection.InsertOne(ctx, property)
 	return property.ID, err
+}
+
+// ← GENERATE next property number using counter collection
+func (s *PropertyService) getNextPropertyNumber(ctx context.Context) (int64, error) {
+	// ← USE findOneAndUpdate to atomically increment counter
+	var result struct {
+		Value int64 `bson:"value"`
+	}
+
+	err := s.CounterCollection.FindOneAndUpdate(
+		ctx,
+		bson.M{"_id": "property_counter"},
+		bson.M{"$inc": bson.M{"value": 1}},
+		&options.FindOneAndUpdateOptions{
+			Upsert:         &[]bool{true}[0],
+			ReturnDocument: &[]options.ReturnDocument{options.After}[0],
+		},
+	).Decode(&result)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return result.Value, nil
+}
+
+func (s *PropertyService) GetPropertyByNumber(ctx context.Context, propertyNumber int64) (*models.Property, error) {
+	var property models.Property
+	err := s.PropertyCollection.FindOne(ctx, bson.M{"property_number": propertyNumber, "is_deleted": false}).Decode(&property)
+	if err != nil {
+		return nil, err
+	}
+	return &property, nil
 }
 
 func (s *PropertyService) GetPropertyByID(id primitive.ObjectID) (*models.Property, error) {
@@ -58,10 +101,10 @@ func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Proper
 }
 
 func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID) ([]models.Property, error) {
-	filter := bson.M{"dealer_id": dealerID,"$or": []bson.M{
-        {"is_deleted": false},           // Field exists and is false
-        {"is_deleted": bson.M{"$exists": false}}, // Field doesn't exist
-    },}
+	filter := bson.M{"dealer_id": dealerID, "$or": []bson.M{
+		{"is_deleted": false},                    // Field exists and is false
+		{"is_deleted": bson.M{"$exists": false}}, // Field doesn't exist
+	}}
 
 	cursor, err := s.PropertyCollection.Find(ctx, filter)
 	if err != nil {

@@ -6,12 +6,13 @@ import (
 
 type Property struct {
 	ID              primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	PropertyNumber  int64              `json:"property_number" bson:"property_number"`
 	DealerID        primitive.ObjectID `json:"dealer_id" bson:"dealer_id"`
 	Title           string             `json:"title" bson:"title"`
 	Description     string             `json:"description" bson:"description"`
 	Address         string             `json:"address" bson:"address"`
-	MinPrice    float64                 `json:"min_price" bson:"min_price"`
-	MaxPrice    float64                 `json:"max_price" bson:"max_price"`
+	MinPrice        float64            `json:"min_price" bson:"min_price"`
+	MaxPrice        float64            `json:"max_price" bson:"max_price"`
 	Photos          []string           `json:"photos,omitempty" bson:"photos,omitempty"`
 	Videos          []string           `json:"videos,omitempty" bson:"videos,omitempty"`
 	OwnerName       string             `json:"owner_name,omitempty" bson:"owner_name,omitempty"`

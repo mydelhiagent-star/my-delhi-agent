@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"myapp/middlewares"
 	"myapp/models"
@@ -179,4 +180,33 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(properties)
+}
+
+func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	propertyNumberStr := vars["number"]
+
+	if propertyNumberStr == "" {
+		http.Error(w, "Property number is required", http.StatusBadRequest)
+		return
+	}
+
+	propertyNumber, err := strconv.ParseInt(propertyNumberStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid property number", http.StatusBadRequest)
+		return
+	}
+
+	property, err := h.Service.GetPropertyByNumber(r.Context(), propertyNumber)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Property not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to fetch property", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(property)
 }
