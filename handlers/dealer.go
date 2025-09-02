@@ -173,3 +173,48 @@ func (h *DealerHandler) DeleteDealer(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusOK, map[string]string{"message": "Dealer deleted"})
 }
+
+func (h *DealerHandler) ResetPasswordDealer(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	dealerID := vars["id"]
+
+	if dealerID == "" {
+		response.Error(w, http.StatusBadRequest, "Dealer ID is required")
+		return
+	}
+
+	dealerObjID, err := primitive.ObjectIDFromHex(dealerID)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid dealer ID")
+		return
+	}
+
+	// ← PARSE request body for new password
+	var requestBody struct {
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if requestBody.Password == "" {
+		response.Error(w, http.StatusBadRequest, "Password is required")
+		return
+	}
+
+	// ← VALIDATE password strength (optional)
+	if len(requestBody.Password) < 6 {
+		response.Error(w, http.StatusBadRequest, "Password must be at least 6 characters long")
+		return
+	}
+
+	err = h.Service.ResetPasswordDealer(r.Context(), dealerObjID, requestBody.Password)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to reset password: "+err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]string{"message": "Password reset successfully"})
+}

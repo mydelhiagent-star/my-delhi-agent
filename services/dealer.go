@@ -292,3 +292,31 @@ func (s *DealerService) DeleteDealer(ctx context.Context, dealerID primitive.Obj
 
 	return err
 }
+
+func (s *DealerService) ResetPasswordDealer(ctx context.Context, dealerID primitive.ObjectID, newPassword string) error {
+	// ← VALIDATE dealer exists
+	var dealer models.Dealer
+	err := s.DealerCollection.FindOne(ctx, bson.M{"_id": dealerID}).Decode(&dealer)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return errors.New("dealer not found")
+		}
+		return err
+	}
+
+	// ← HASH the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// ← UPDATE dealer's password
+	update := bson.M{
+		"$set": bson.M{
+			"password": string(hashedPassword),
+		},
+	}
+
+	_, err = s.DealerCollection.UpdateByID(ctx, dealerID, update)
+	return err
+}
