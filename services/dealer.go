@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
@@ -232,4 +233,9 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 	}
 
 	return results, nil // one dealer per subLocation
+}
+
+func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
+	_, err := s.DealerCollection.UpdateByID(ctx, dealerID, bson.M{"$set": dealer})
+	return err
 }

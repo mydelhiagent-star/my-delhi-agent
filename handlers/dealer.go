@@ -7,6 +7,9 @@ import (
 	"myapp/models"
 	"myapp/response"
 	"myapp/services"
+
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DealerHandler struct {
@@ -119,6 +122,50 @@ func (h *DealerHandler) GetAllDealers(w http.ResponseWriter, r *http.Request){
 	}
 	response.JSON(w, http.StatusOK, dealers)
 }
+
+func (h *DealerHandler) UpdateDealer(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	dealerID := vars["id"]
+	
+	if dealerID == "" {
+		response.Error(w, http.StatusBadRequest, "Dealer ID is required")
+		return
+	}
+
+	var dealer models.Dealer
+	if err := json.NewDecoder(r.Body).Decode(&dealer); err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	dealerObjID, err := primitive.ObjectIDFromHex(dealerID)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "Invalid dealer ID")
+		return
+	}
+
+	err = h.Service.UpdateDealer(r.Context(), dealerObjID, dealer)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to update dealer: "+err.Error())
+		return
+	}
+	
+	response.JSON(w, http.StatusOK, map[string]string{"message": "Dealer updated"})
+
+
+
+
+
+
+
+
+
+	
+	
+	
+}
+
+
 
 
 
