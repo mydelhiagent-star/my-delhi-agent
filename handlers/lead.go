@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -30,7 +31,6 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Name and phone are required", http.StatusBadRequest)
 		return
 	}
-
 	id, err := h.Service.CreateLead(r.Context(), lead)
 	if err != nil {
 		http.Error(w, "Failed to create lead", http.StatusInternalServerError)
@@ -169,6 +169,7 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Property ID and dealer ID are required", http.StatusBadRequest)
 		return
 	}
+	propertyInterest.CreatedAt = time.Now()
 
 	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
 	if err != nil {

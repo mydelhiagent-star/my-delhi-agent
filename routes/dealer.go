@@ -21,10 +21,14 @@ func RegisterDealerRoutes(r *mux.Router, h *handlers.DealerHandler, jwtSecret st
 
 	// Admin
 	admin := r.PathPrefix("/admin/dealers").Subrouter()
-	// admin.Use(middlewares.JWTAuth(jwtSecret))
-	// admin.Use(middlewares.RequireRole("admin"))
+	admin.Use(middlewares.JWTAuth(jwtSecret))
+	admin.Use(middlewares.RequireRole("admin"))
 	admin.HandleFunc("/by-sublocation", h.GetDealersBySubLocation).Methods("GET")
-	admin.HandleFunc("/locations/sublocations",h.GetLocationsWithSubLocations).Methods("GET")
-	admin.HandleFunc("/with-properties",h.GetDealerWithProperties).Methods("GET")
+	admin.HandleFunc("/locations/sublocations", h.GetLocationsWithSubLocations).Methods("GET")
+	admin.HandleFunc("/with-properties", h.GetDealerWithProperties).Methods("GET")
+	admin.HandleFunc("/", h.GetAllDealers).Methods("GET")
+	admin.HandleFunc("/{id}", h.UpdateDealer).Methods("PUT")
+	admin.HandleFunc("/{id}", h.DeleteDealer).Methods("DELETE")
+	admin.HandleFunc("/reset-password/{id}", h.ResetPasswordDealer).Methods("PUT")
 
 }

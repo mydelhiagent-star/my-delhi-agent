@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
@@ -209,7 +210,7 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 				"$sortArray": bson.M{
 					"input": "$properties",
 					"sortBy": bson.M{
-						"_id": -1,  // ← Sort by ObjectID descending (latest first)
+						"_id": -1, // ← Sort by ObjectID descending (latest first)
 					},
 				},
 			},
@@ -232,4 +233,90 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 	}
 
 	return results, nil // one dealer per subLocation
+}
+
+func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
+	_, err := s.DealerCollection.UpdateByID(ctx, dealerID, bson.M{"$set": dealer})
+	return err
+}
+
+func (s *DealerService) DeleteDealer(ctx context.Context, dealerID primitive.ObjectID) error {
+	// ← START session for transaction
+	session, err := s.DealerCollection.Database().Client().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+
+	// ← EXECUTE transaction
+	_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// Step 1: Mark all dealer's properties as deleted (soft delete)
+		propertyCollection := s.DealerCollection.Database().Collection("property")
+		propertyUpdate := bson.M{
+			"$set": bson.M{
+				"is_deleted": true,
+				"updated_at": time.Now(),
+			},
+		}
+		_, err := propertyCollection.UpdateMany(sessCtx,
+			bson.M{"dealer_id": dealerID},
+			propertyUpdate)
+		if err != nil {
+			return nil, err
+		}
+
+		// Step 2: Remove dealer's properties from leads' property interests
+		leadCollection := s.DealerCollection.Database().Collection("leads")
+		leadUpdate := bson.M{
+			"$pull": bson.M{
+				"properties": bson.M{
+					"dealer_id": dealerID,
+				},
+			},
+		}
+		_, err = leadCollection.UpdateMany(sessCtx,
+			bson.M{"properties.dealer_id": dealerID},
+			leadUpdate)
+		if err != nil {
+			return nil, err
+		}
+
+		// Step 3: Delete the dealer
+		_, err = s.DealerCollection.DeleteOne(sessCtx, bson.M{"_id": dealerID})
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
+	return err
+}
+
+func (s *DealerService) ResetPasswordDealer(ctx context.Context, dealerID primitive.ObjectID, newPassword string) error {
+	// ← VALIDATE dealer exists
+	var dealer models.Dealer
+	err := s.DealerCollection.FindOne(ctx, bson.M{"_id": dealerID}).Decode(&dealer)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return errors.New("dealer not found")
+		}
+		return err
+	}
+
+	// ← HASH the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// ← UPDATE dealer's password
+	update := bson.M{
+		"$set": bson.M{
+			"password": string(hashedPassword),
+		},
+	}
+
+	_, err = s.DealerCollection.UpdateByID(ctx, dealerID, update)
+	return err
 }

@@ -23,4 +23,5 @@ func RegisterPropertyRoutes(r *mux.Router, h *handlers.PropertyHandler, jwtSecre
 	adminRouter.HandleFunc("/", h.GetAllProperties).Methods("GET")
 
 	propertyRouter.HandleFunc("/", h.GetPropertiesByDealer).Methods("GET")
+	propertyRouter.HandleFunc("/number/{number}", h.GetPropertyByNumber).Methods("GET")
 }
