@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	
 )
 
 type LeadService struct {
@@ -82,10 +82,15 @@ func (s *LeadService) UpdateLead(ctx context.Context, id primitive.ObjectID, upd
 	return err
 }
 
+func (s *LeadService) DeleteLead(ctx context.Context, id primitive.ObjectID) error {
+	_, err := s.LeadCollection.DeleteOne(ctx, bson.M{"_id": id})
+	return err
+}
+
 func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyInterest models.PropertyInterest) error {
 	// Set timestamps and status
 
-	propertyInterest.Status = models.LeadStatusViewed
+	propertyInterest.Status = models.LeadStatusView
 
 	_, err := s.LeadCollection.UpdateOne(ctx,
 		bson.M{"_id": leadID},
@@ -95,19 +100,75 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.
 	return err
 }
 
-func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limit int) ([]models.Lead, error) {
+func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Lead, error) {
 	// ← CALCULATE skip value for pagination
 	skip := (page - 1) * limit
 
-	// ← GET total count first
+	// ← BUILD aggregation pipeline
+	pipeline := mongo.Pipeline{
+		// Stage 1: Match leads based on filter
+		{{Key: "$match", Value: filter}},
 
-	// ← SET pagination options
-	options := options.Find()
-	options.SetSort(bson.D{{Key: "_id", Value: -1}}) // Newest first
-	options.SetLimit(int64(limit))
-	options.SetSkip(int64(skip))
+		// Stage 2: Lookup properties to check if they're deleted
+		{{Key: "$lookup", Value: bson.M{
+			"from":         "property",
+			"localField":   "properties.property_id",
+			"foreignField": "_id",
+			"as":           "property_details",
+		}}},
 
-	cursor, err := s.LeadCollection.Find(ctx, filter, options)
+		// Stage 3: Filter out deleted properties
+		{{Key: "$addFields", Value: bson.M{
+			"properties": bson.M{
+				"$filter": bson.M{
+					"input": "$properties",
+					"as":    "prop",
+					"cond": bson.M{
+						"$not": bson.M{
+							"$anyElementTrue": bson.A{
+								bson.M{
+									"$map": bson.M{
+										"input": bson.M{
+											"$filter": bson.M{
+												"input": "$property_details",
+												"cond": bson.M{
+													"$eq": bson.A{"$$this._id", "$$prop.property_id"},
+												},
+											},
+										},
+										"as": "matched_prop",
+										"in": "$$matched_prop.is_deleted",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}}},
+
+		// Stage 4: Sort by creation date (newest first)
+		{{Key: "$sort", Value: bson.M{"_id": -1}}},
+
+		// Stage 5: Skip for pagination
+		{{Key: "$skip", Value: int64(skip)}},
+
+		// Stage 6: Limit for pagination
+		{{Key: "$limit", Value: int64(limit)}},
+	}
+
+	// ← ADD projection if fields are specified
+	if len(fields) > 0 {
+		projection := bson.M{}
+		for _, field := range fields {
+			projection[field] = 1
+		}
+		projection["_id"] = 1
+		pipeline = append(pipeline, bson.D{{Key: "$project", Value: projection}})
+	}
+
+	// ← EXECUTE aggregation
+	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +182,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 	return leads, nil
 }
 
-func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) ([]models.Property, error) {
+func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) ([]bson.M, error) {
 	// ← BUILD the aggregation pipeline
 	pipeline := mongo.Pipeline{
 		// Stage 1: Match the specific lead
@@ -135,19 +196,61 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 			"as":           "populated_properties",
 		}}},
 
+		// Stage 3: Add fields to combine property details with interest status
 		{{Key: "$addFields", Value: bson.M{
-            "populated_properties": bson.M{
-                "$filter": bson.M{
-                    "input": "$populated_properties",
-                    "cond": bson.M{
-                        "$ne": []interface{}{
-                            "$$this.is_deleted",
-                            true,
-                        },
-                    },
-                },
-            },
-        }}},
+			"properties_with_status": bson.M{
+				"$map": bson.M{
+					"input": "$properties",
+					"as":    "prop",
+					"in": bson.M{
+						"$mergeObjects": bson.A{
+							"$$prop",
+							bson.M{
+								"$arrayElemAt": bson.A{
+									bson.M{
+										"$filter": bson.M{
+											"input": "$populated_properties",
+											"cond": bson.M{
+												"$eq": bson.A{"$$this._id", "$$prop.property_id"},
+											},
+										},
+									},
+									0,
+								},
+							},
+						},
+					},
+				},
+			},
+		}}},
+
+		// Stage 4: Filter out deleted properties
+		{{Key: "$addFields", Value: bson.M{
+			"properties_with_status": bson.M{
+				"$filter": bson.M{
+					"input": "$properties_with_status",
+					"cond": bson.M{
+						"$ne": []interface{}{"$$this.is_deleted", true},
+					},
+				},
+			},
+		}}},
+		{{Key: "$addFields", Value: bson.M{
+			"properties_with_status": bson.M{
+				"$sortArray": bson.M{
+					"input": "$properties_with_status",
+					"sortBy": bson.M{
+						"_id": -1,  // ← Sort by ObjectID descending (latest first)
+					},
+				},
+			},
+		}}},
+
+		// Stage 5: Project only the properties array
+		{{Key: "$project", Value: bson.M{
+			"_id":        0,
+			"properties": "$properties_with_status",
+		}}},
 	}
 
 	// ← EXECUTE the aggregation pipeline
@@ -157,17 +260,27 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 	}
 	defer cursor.Close(ctx)
 
-	// ← DECODE the result
-	var result models.Lead
-	if cursor.Next(ctx) {
-		if err := cursor.Decode(&result); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, mongo.ErrNoDocuments
+	// ← DECODE directly into bson.M array
+	var result []bson.M
+	if err = cursor.All(ctx, &result); err != nil {
+		return nil, err
 	}
 
-	return result.PopulatedProperties, nil
+	// ← EXTRACT properties from first result
+	if len(result) > 0 {
+		if properties, ok := result[0]["properties"].(bson.A); ok {
+			// Convert bson.A to []bson.M
+			var propertiesArray []bson.M
+			for _, prop := range properties {
+				if propMap, ok := prop.(bson.M); ok {
+					propertiesArray = append(propertiesArray, propMap)
+				}
+			}
+			return propertiesArray, nil
+		}
+	}
+
+	return []bson.M{}, nil
 }
 
 func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, error) {
@@ -215,4 +328,9 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 	}
 
 	return result, nil
+}
+
+func (s *LeadService) UpdatePropertyStatusByID(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string) error {
+	_, err := s.LeadCollection.UpdateOne(ctx, bson.M{"_id": leadID, "properties.property_id": propertyID}, bson.M{"$set": bson.M{"properties.$.status": status}})
+	return err
 }

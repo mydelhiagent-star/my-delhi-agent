@@ -7,6 +7,7 @@ import (
 	"myapp/services"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -260,8 +261,14 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fieldsParam := r.URL.Query().Get("fields")
+	var fields []string
+	if fieldsParam != "" {
+		fields = strings.Split(fieldsParam, ",")
+	}
+
 	// ← SEARCH leads with filter and pagination
-	leads, err := h.Service.SearchLeads(r.Context(), filter, page, limit)
+	leads, err := h.Service.SearchLeads(r.Context(), filter, page, limit, fields)
 	if err != nil {
 		http.Error(w, "Failed to search leads: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -272,13 +279,16 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 
 		for _, lead := range leads {
 			// Create filtered lead with only allowed fields
-			filteredLead := map[string]interface{}{
-				"id":         lead.ID,
-				"name":       lead.Name,
-				"properties": lead.Properties,
+			if len(lead.Properties) > 0 {
+				// Create filtered lead with only allowed fields
+				filteredLead := map[string]interface{}{
+					"id":         lead.ID,
+					"name":       lead.Name,
+					"properties": lead.Properties,
+				}
+	
+				filteredLeads = append(filteredLeads, filteredLead)
 			}
-
-			filteredLeads = append(filteredLeads, filteredLead)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -286,6 +296,19 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 
+	}
+	if propertyID := r.URL.Query().Get("property_id"); propertyID != "" {
+		for i := range leads {
+			// ← FILTER properties array to only include the specified property_id
+			var filteredProperties []models.PropertyInterest
+			for _, prop := range leads[i].Properties {
+				if prop.PropertyID.Hex() == propertyID {
+					filteredProperties = append(filteredProperties, prop)
+				}
+			}
+			// ← REPLACE the properties array with filtered one
+			leads[i].Properties = filteredProperties
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -318,19 +341,34 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	if status := r.URL.Query().Get("status"); status != "" {
+		filteredByStatus := make([]bson.M, 0)
+		for _, property := range properties {
+			if propStatus, ok := property["status"].(string); ok {
+				if propStatus == status {
+					filteredByStatus = append(filteredByStatus, property)
+				}
+			}
+		}
+		properties = filteredByStatus
+	}
+
 	userID := r.Context().Value(middlewares.UserIDKey).(string)
 	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
 
 	if userRole == "dealer" {
-		filteredProperties := make([]models.Property, 0)
+		filteredProperties := make([]bson.M, 0) // ← Change to []bson.M
 		dealerID, err := primitive.ObjectIDFromHex(userID)
 		if err != nil {
 			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 			return
 		}
 		for _, property := range properties {
-			if property.DealerID == dealerID {
-				filteredProperties = append(filteredProperties, property)
+			// ← Handle ObjectID type correctly
+			if propDealerID, ok := property["dealer_id"].(primitive.ObjectID); ok {
+				if propDealerID == dealerID {
+					filteredProperties = append(filteredProperties, property)
+				}
 			}
 		}
 		properties = filteredProperties
@@ -351,4 +389,90 @@ func (h *LeadHandler) GetConflictingProperties(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conflictingProperties)
+}
+
+func (h *LeadHandler) DeleteLead(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	leadID := vars["leadID"]
+	if leadID == "" {
+		http.Error(w, "Missing lead ID", http.StatusBadRequest)
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
+		return
+	}
+
+	err = h.Service.DeleteLead(r.Context(), objID)
+
+	if err != nil {
+		http.Error(w, "Failed to delete lead", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Lead deleted successfully"})
+}
+
+func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	leadID := vars["leadID"]
+	propertyID := vars["propertyID"]
+
+	if leadID == "" || propertyID == "" {
+		http.Error(w, "Missing lead ID or property ID", http.StatusBadRequest)
+		return
+	}
+
+	leadObjID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
+		return
+	}
+
+	propertyObjID, err := primitive.ObjectIDFromHex(propertyID)
+	if err != nil {
+		http.Error(w, "Invalid property ID", http.StatusBadRequest)
+		return
+	}
+
+	// Decode the status update
+	var updateData struct {
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate status
+	validStatuses := []string{"view", "ongoing", "converted", "closed"}
+	isValid := false
+	for _, status := range validStatuses {
+		if status == updateData.Status {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		http.Error(w, "Invalid status. Must be one of: view, ongoing, converted, closed", http.StatusBadRequest)
+		return
+	}
+
+	// ← CALL the specific service method
+	err = h.Service.UpdatePropertyStatusByID(r.Context(), leadObjID, propertyObjID, updateData.Status)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			http.Error(w, "Property interest not found for this lead", http.StatusNotFound)
+		} else {
+			http.Error(w, "Failed to update property status: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Property status updated successfully",
+	})
 }
