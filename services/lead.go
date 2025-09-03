@@ -125,7 +125,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 		// Stage 1: Match leads based on filter
 		{{Key: "$match", Value: filter}},
 
-		// Stage 2: Lookup properties to check if they're deleted
+		// Stage 2: Lookup properties
 		{{Key: "$lookup", Value: bson.M{
 			"from":         "property",
 			"localField":   "properties.property_id",
@@ -133,28 +133,25 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 			"as":           "property_details",
 		}}},
 
-		// Stage 3: Filter out deleted properties
+		// Stage 3: Filter properties based on deleted + sold rules
 		{{Key: "$addFields", Value: bson.M{
 			"properties": bson.M{
 				"$filter": bson.M{
 					"input": "$properties",
 					"as":    "prop",
 					"cond": bson.M{
-						"$not": bson.M{
-							"$anyElementTrue": bson.A{
-								bson.M{
-									"$map": bson.M{
-										"input": bson.M{
-											"$filter": bson.M{
-												"input": "$property_details",
-												"cond": bson.M{
-													"$eq": bson.A{"$$this._id", "$$prop.property_id"},
-												},
-											},
-										},
-										"as": "matched_prop",
-										"in": "$$matched_prop.is_deleted",
-									},
+						"$and": bson.A{
+							// 1. Exclude deleted properties
+							bson.M{"$ne": bson.A{"$$prop.is_deleted", true}},
+
+							// 2. Sold logic
+							bson.M{
+								"$or": bson.A{
+									// Case A: If status = converted → always include
+									bson.M{"$eq": bson.A{"$status", "converted"}},
+
+									// Case B: Otherwise → sold != true
+									bson.M{"$ne": bson.A{"$$prop.sold", true}},
 								},
 							},
 						},
@@ -163,13 +160,13 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 			},
 		}}},
 
-		// Stage 4: Sort by creation date (newest first)
+		// Stage 4: Sort
 		{{Key: "$sort", Value: bson.M{"_id": -1}}},
 
-		// Stage 5: Skip for pagination
+		// Stage 5: Skip
 		{{Key: "$skip", Value: int64(skip)}},
 
-		// Stage 6: Limit for pagination
+		// Stage 6: Limit
 		{{Key: "$limit", Value: int64(limit)}},
 	}
 
@@ -347,6 +344,17 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 }
 
 func (s *LeadService) UpdatePropertyStatusByID(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string) error {
-	_, err := s.LeadCollection.UpdateOne(ctx, bson.M{"_id": leadID, "properties.property_id": propertyID}, bson.M{"$set": bson.M{"properties.$.status": status}})
-	return err
+	if status == "closed" {
+		// Remove the property from the lead's properties array
+		_, err := s.LeadCollection.UpdateOne(ctx,
+			bson.M{"_id": leadID},
+			bson.M{"$pull": bson.M{"properties": bson.M{"property_id": propertyID}}})
+		return err
+	} else {
+		// Update the status
+		_, err := s.LeadCollection.UpdateOne(ctx,
+			bson.M{"_id": leadID, "properties.property_id": propertyID},
+			bson.M{"$set": bson.M{"properties.$.status": status}})
+		return err
+	}
 }
