@@ -447,6 +447,7 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 	// Decode the status update
 	var updateData struct {
 		Status string `json:"status"`
+		SoldPrice float64 `json:"sold_price"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -480,6 +481,8 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 	if updateData.Status == "converted" {
 		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
 			Sold: &[]bool{true}[0],
+			SoldPrice: &updateData.SoldPrice,
+
 		})
 		if err != nil {
 			http.Error(w, "Failed to update property sold status", http.StatusInternalServerError)
