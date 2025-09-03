@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,7 +16,7 @@ import (
 )
 
 type LeadHandler struct {
-	Service *services.LeadService
+	Service         *services.LeadService
 	PropertyService *services.PropertyService
 }
 
@@ -169,11 +168,14 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Property ID and dealer ID are required", http.StatusBadRequest)
 		return
 	}
-	
 
 	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
 	if err != nil {
-		http.Error(w, "Failed to add property: "+err.Error(), http.StatusInternalServerError)
+		if err.Error() == "property already added to this lead" {
+			http.Error(w, "Property already added to this lead", http.StatusConflict)
+		} else {
+			http.Error(w, "Failed to add property: "+err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -288,7 +290,7 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 					"name":       lead.Name,
 					"properties": lead.Properties,
 				}
-	
+
 				filteredLeads = append(filteredLeads, filteredLead)
 			}
 		}
@@ -474,7 +476,7 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 	}
 	if updateData.Status == "converted" {
 		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
-			Sold: &[]bool{true}[0], 
+			Sold: &[]bool{true}[0],
 		})
 		if err != nil {
 			http.Error(w, "Failed to update property sold status", http.StatusInternalServerError)
