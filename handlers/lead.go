@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
+	
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -169,7 +169,7 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Property ID and dealer ID are required", http.StatusBadRequest)
 		return
 	}
-	propertyInterest.CreatedAt = time.Now()
+	
 
 	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
 	if err != nil {

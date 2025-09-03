@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"myapp/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	
 )
 
 type LeadService struct {
@@ -91,6 +91,7 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.
 	// Set timestamps and status
 
 	propertyInterest.Status = models.LeadStatusView
+	propertyInterest.CreatedAt = time.Now()
 
 	_, err := s.LeadCollection.UpdateOne(ctx,
 		bson.M{"_id": leadID},
