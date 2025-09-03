@@ -200,7 +200,10 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 				"$filter": bson.M{
 					"input": "$properties",
 					"cond": bson.M{
-						"$ne": []interface{}{"$$this.is_deleted", true},
+						"$and": bson.A{
+							bson.M{"$ne": []interface{}{"$$this.is_deleted", true}},
+							bson.M{"$ne": []interface{}{"$$this.sold", true}},
+						},
 					},
 				},
 			},
