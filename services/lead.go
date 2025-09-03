@@ -164,7 +164,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 		}}},
 
 		// Stage 4: Sort by creation date (newest first)
-		{{Key: "$sort", Value: bson.M{"created_at": -1}}},
+		{{Key: "$sort", Value: bson.M{"_id": -1}}},
 
 		// Stage 5: Skip for pagination
 		{{Key: "$skip", Value: int64(skip)}},
@@ -256,7 +256,7 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 				"$sortArray": bson.M{
 					"input": "$properties_with_status",
 					"sortBy": bson.M{
-						"_id": -1, // ← Sort by ObjectID descending (latest first)
+						"created_at": -1, // ← Sort by ObjectID descending (latest first)
 					},
 				},
 			},
