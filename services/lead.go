@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"myapp/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	
 )
 
 type LeadService struct {
@@ -88,13 +88,29 @@ func (s *LeadService) DeleteLead(ctx context.Context, id primitive.ObjectID) err
 }
 
 func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyInterest models.PropertyInterest) error {
-	// Set timestamps and status
-
+	// Set status
 	propertyInterest.Status = models.LeadStatusView
+	propertyInterest.CreatedAt = time.Now()
 
-	_, err := s.LeadCollection.UpdateOne(ctx,
+	// ← CHECK if property already exists for this lead
+	var existingLead models.Lead
+	err := s.LeadCollection.FindOne(ctx, bson.M{
+		"_id":                    leadID,
+		"properties.property_id": propertyInterest.PropertyID,
+	}).Decode(&existingLead)
+
+	if err == nil {
+		// ← Property already exists for this lead
+		return errors.New("property already added to this lead")
+	} else if err != mongo.ErrNoDocuments {
+		// ← Database error occurred
+		return fmt.Errorf("database error checking property: %w", err)
+	}
+
+	// ← Property doesn't exist, add it
+	_, err = s.LeadCollection.UpdateOne(ctx,
 		bson.M{"_id": leadID},
-		bson.M{"$addToSet": bson.M{"properties": propertyInterest}},
+		bson.M{"$push": bson.M{"properties": propertyInterest}},
 	)
 
 	return err
@@ -148,7 +164,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 		}}},
 
 		// Stage 4: Sort by creation date (newest first)
-		{{Key: "$sort", Value: bson.M{"_id": -1}}},
+		{{Key: "$sort", Value: bson.M{"created_at": -1}}},
 
 		// Stage 5: Skip for pagination
 		{{Key: "$skip", Value: int64(skip)}},
@@ -240,7 +256,7 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 				"$sortArray": bson.M{
 					"input": "$properties_with_status",
 					"sortBy": bson.M{
-						"_id": -1,  // ← Sort by ObjectID descending (latest first)
+						"_id": -1, // ← Sort by ObjectID descending (latest first)
 					},
 				},
 			},
