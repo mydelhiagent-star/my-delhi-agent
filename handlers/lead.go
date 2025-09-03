@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"myapp/middlewares"
 	"myapp/models"
+	"myapp/response"
 	"myapp/services"
 	"net/http"
 	"strconv"
@@ -172,9 +173,11 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
 	if err != nil {
 		if err.Error() == "property already added to this lead" {
-			http.Error(w, "Property already added to this lead", http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{
+				"message": "Property already added to this lead",
+			})
 		} else {
-			http.Error(w, "Failed to add property: "+err.Error(), http.StatusInternalServerError)
+			response.Error(w, http.StatusInternalServerError, "Failed to add property: "+err.Error())
 		}
 		return
 	}
