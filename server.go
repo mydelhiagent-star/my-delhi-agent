@@ -35,6 +35,7 @@ func main() {
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
 	tokenCollection := client.Database(cfg.MongoDB).Collection("token")
 	counterCollection := client.Database(cfg.MongoDB).Collection("counters")
+	dealerClientCollection := client.Database(cfg.MongoDB).Collection("dealer_clients")
 
 	dealerService := &services.DealerService{
 		DealerCollection: dealerCollection,
@@ -51,6 +52,9 @@ func main() {
 		PropertyCollection: propertyCollection,
 		CounterCollection:  counterCollection,
 	}
+	dealerClientService := &services.DealerClientService{
+		DealerClientCollection: dealerClientCollection,
+	}
 
 	leadHandler := &handlers.LeadHandler{
 		Service:         leadService,
@@ -58,6 +62,8 @@ func main() {
 	}
 
 	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL}
+
+	dealerClientHandler := &handlers.DealerClientHandler{Service: dealerClientService}
 
 	cloudfareHandler := &handlers.CloudfareHandler{
 		Service: r2Service,
@@ -101,6 +107,7 @@ func main() {
 	routes.RegisterLeadRoutes(r, leadHandler, cfg.JWTSecret)
 	routes.RegisterPropertyRoutes(r, propertyHandler, cfg.JWTSecret)
 	routes.RegisterCloudFareRoutes(r, cloudfareHandler, cfg.JWTSecret)
+	routes.RegisterDealerClientRoutes(r, dealerClientHandler, cfg.JWTSecret)
 
 	corsHandler := h.CORS(
 		h.AllowedOrigins([]string{"*"}),
