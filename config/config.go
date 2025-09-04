@@ -15,6 +15,11 @@ type Config struct {
 	RedisURI                  string
 	RedisUsername             string
 	RedisPassword             string
+	PostgresHost              string
+    PostgresPort              string
+    PostgresUser              string
+    PostgresPassword          string
+    PostgresDBName            string
 	AdminEmail                string
 	AdminPassword             string
 	CloudflareAccountID       string
@@ -22,6 +27,7 @@ type Config struct {
 	CloudflareAccessKeySecret string
 	CloudflareBucketName      string
 	CloudflarePublicURL       string
+
 }
 
 func LoadConfig() Config {
