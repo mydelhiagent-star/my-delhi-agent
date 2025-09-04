@@ -22,6 +22,18 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	// Check if phone number already exists for this dealer
+	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), dealerClient.DealerID, dealerClient.Phone)
+	if err != nil {
+		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		http.Error(w, "Phone number already exists for this dealer", http.StatusConflict)
+		return
+	}
+
 	dealerClient.Status = "unmarked"
 	_, err = h.Service.CreateDealerClient(r.Context(), dealerClient)
 	if err != nil {
@@ -75,7 +87,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		Name   string `json:"name"`
 		Phone  string `json:"phone"`
 		Status string `json:"status"`
-		Note  string `json:"note"`
+		Note   string `json:"note"`
 		// Add other updateable fields here
 	}
 
