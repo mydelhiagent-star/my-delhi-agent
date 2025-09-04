@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -493,6 +494,7 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
 			Sold:      &[]bool{true}[0],
 			SoldPrice: &updateData.SoldPrice,
+			SoldDate:  time.Now(),
 		})
 		if err != nil {
 			http.Error(w, "Failed to update property sold status", http.StatusInternalServerError)
