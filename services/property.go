@@ -26,7 +26,6 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 		return primitive.NilObjectID, err
 	}
 
-	property.ID = primitive.NewObjectID()
 	property.PropertyNumber = propertyNumber
 
 	_, err = s.PropertyCollection.InsertOne(ctx, property)
