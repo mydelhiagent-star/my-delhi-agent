@@ -29,7 +29,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
 		return
 	}
-	if exists {
+	if exists > 0 {
 		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
@@ -88,7 +88,6 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		Phone  string `json:"phone"`
 		Status string `json:"status"`
 		Note   string `json:"note"`
-		// Add other updateable fields here
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
@@ -96,9 +95,27 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 
+	// Get current dealer client to fetch property_id and dealer_id
+	currentClient, err := h.Service.GetDealerClientByID(r.Context(), objID)
+	if err != nil {
+		http.Error(w, "Failed to fetch dealer client", http.StatusInternalServerError)
+		return
+	}
+
+	// Check if phone number already exists for this dealer (excluding current client)
+	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), currentClient.DealerID, updateData.Phone)
+	if err != nil {
+		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
+		return
+	}
+	if exists > 1 {
+		http.Error(w, "Phone number already exists for this property", http.StatusConflict)
+		return
+	}
+
 	err = h.Service.UpdateDealerClient(r.Context(), objID, updateData)
 	if err != nil {
-		http.Error(w, "Failed to update dealer client", http.StatusInternalServerError)
+		http.Error(w, "Failed to update client", http.StatusInternalServerError)
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client updated successfully"})

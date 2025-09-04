@@ -13,15 +13,15 @@ type DealerClientService struct {
 	DealerClientCollection *mongo.Collection
 }
 
-func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, phone string) (bool, error) {
+func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, phone string) (int64, error) {
 	count, err := s.DealerClientCollection.CountDocuments(ctx, bson.M{
 		"dealer_id": dealerID,
 		"phone":     phone,
 	})
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	return count > 0, nil
+	return count, nil
 }
 
 func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (primitive.ObjectID, error) {
@@ -42,6 +42,17 @@ func (s *DealerClientService) GetDealerClientByPropertyID(ctx context.Context, d
 	}
 	return dealerClients, nil
 }
+
+func (s *DealerClientService) GetDealerClientByID(ctx context.Context, dealerClientID primitive.ObjectID) (*models.DealerClient, error) {
+	var dealerClient models.DealerClient
+	err := s.DealerClientCollection.FindOne(ctx, bson.M{"_id": dealerClientID}).Decode(&dealerClient)
+	if err != nil {
+		return nil, err
+	}
+	return &dealerClient, nil
+}
+
+
 
 func (s *DealerClientService) UpdateDealerClient(ctx context.Context, dealerClientID primitive.ObjectID, updateData interface{}) error {
 	_, err := s.DealerClientCollection.UpdateByID(ctx, dealerClientID, bson.M{"$set": updateData})
