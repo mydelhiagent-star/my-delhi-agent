@@ -402,7 +402,6 @@ func (h *LeadHandler) GetPropertyDetails(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(propertyDetails)
 }
 
-
 func (h *LeadHandler) DeleteLead(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	leadID := vars["leadID"]
@@ -491,10 +490,11 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if updateData.Status == "converted" {
+		soldDate := time.Now()
 		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
 			Sold:      &[]bool{true}[0],
 			SoldPrice: &updateData.SoldPrice,
-			SoldDate:  time.Now(),
+			SoldDate:  &soldDate,
 		})
 		if err != nil {
 			http.Error(w, "Failed to update property sold status", http.StatusInternalServerError)
