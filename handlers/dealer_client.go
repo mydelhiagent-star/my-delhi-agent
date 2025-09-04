@@ -30,7 +30,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 	if exists {
-		http.Error(w, "Phone number already exists for this dealer", http.StatusConflict)
+		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
 
