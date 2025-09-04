@@ -13,6 +13,7 @@ var Locations = []string{
 	"Noida Sector 137", "Noida Sector 142", "Noida Sector 143", "Noida Sector 144",
 	"Noida Sector 145", "Noida Sector 146", "Noida Sector 147", "Noida Sector 148",
 	"Knowledge Park II", "Pari Chowk", "Alpha 1", "Delta 1", "GNIDA Office", "Depot Station",
+	"Extra",
 }
 
 func IsValidLocation(location string) bool {
