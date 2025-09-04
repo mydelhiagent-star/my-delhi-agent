@@ -10,9 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Assume you have a GCPService with these methods:
-// GenerateSignedURL(objectName string, expiry time.Duration) (string, error)
-// PublicFileURL(objectName string) string
+
 
 type PropertyService struct {
 	PropertyCollection *mongo.Collection
