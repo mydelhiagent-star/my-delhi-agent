@@ -13,9 +13,10 @@ type DealerClientService struct {
 	DealerClientCollection *mongo.Collection
 }
 
-func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, phone string) (bool, error) {
+func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID, phone string) (bool, error) {
 	count, err := s.DealerClientCollection.CountDocuments(ctx, bson.M{
 		"dealer_id": dealerID,
+		"property_id": propertyID,
 		"phone":     phone,
 	})
 	if err != nil {
