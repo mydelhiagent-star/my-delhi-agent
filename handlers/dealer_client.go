@@ -24,12 +24,12 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 	}
 
 	// Check if phone number already exists for this dealer
-	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), dealerClient.DealerID, dealerClient.Phone)
+	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), dealerClient.DealerID, dealerClient.PropertyID, dealerClient.Phone)
 	if err != nil {
 		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
 		return
 	}
-	if exists > 0 {
+	if exists {
 		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
@@ -103,12 +103,12 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	}
 
 	// Check if phone number already exists for this dealer (excluding current client)
-	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), currentClient.DealerID, updateData.Phone)
+	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), currentClient.DealerID, currentClient.PropertyID, updateData.Phone)
 	if err != nil {
 		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
 		return
 	}
-	if exists > 1 {
+	if exists {
 		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
