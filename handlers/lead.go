@@ -385,18 +385,22 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 	json.NewEncoder(w).Encode(properties)
 }
 
-func (h *LeadHandler) GetConflictingProperties(w http.ResponseWriter, r *http.Request) {
+func (h *LeadHandler) GetPropertyDetails(w http.ResponseWriter, r *http.Request) {
+	// Extract raw query params (still strings)
+	soldStr := r.URL.Query().Get("sold")
+	deletedStr := r.URL.Query().Get("deleted")
 
-	conflictingProperties, err := h.Service.GetConflictingProperties(r.Context())
-
+	// Pass to service
+	propertyDetails, err := h.Service.GetPropertyDetails(r.Context(), soldStr, deletedStr)
 	if err != nil {
-		http.Error(w, "Failed to fetch conflicting properties", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch property details", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conflictingProperties)
+	json.NewEncoder(w).Encode(propertyDetails)
 }
+
 
 func (h *LeadHandler) DeleteLead(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

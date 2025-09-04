@@ -22,7 +22,7 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 	adminRouter.HandleFunc("/{leadID}", h.DeleteLead).Methods("DELETE")
 	adminRouter.HandleFunc("/{leadID}", h.UpdateLead).Methods("PUT")
 	adminRouter.HandleFunc("/{leadID}/properties", h.AddPropertyInterest).Methods("POST")
-	adminRouter.HandleFunc("/conflicting-properties", h.GetConflictingProperties).Methods("GET")
+	adminRouter.HandleFunc("/properties-details", h.GetPropertyDetails).Methods("GET")
 	adminRouter.HandleFunc("/{leadID}/properties/{propertyID}", h.UpdatePropertyInterest).Methods("PUT")
 
 }

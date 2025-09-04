@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"myapp/models"
@@ -296,7 +297,19 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID primiti
 	return []bson.M{}, nil
 }
 
-func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, error) {
+func (s *LeadService) GetPropertyDetails(ctx context.Context, soldStr string, deletedStr string) ([]bson.M, error) {
+	matchStage := bson.M{}
+
+	// Convert string params to bool before adding to filter
+	if soldStr != "" {
+		soldVal := (strings.ToLower(soldStr) == "true")
+		matchStage["populated_properties.sold"] = soldVal
+	}
+	if deletedStr != "" {
+		deletedVal := (strings.ToLower(deletedStr) == "true")
+		matchStage["populated_properties.deleted"] = deletedVal
+	}
+
 	pipeline := mongo.Pipeline{
 		{{Key: "$lookup", Value: bson.M{
 			"from":         "property",
@@ -308,26 +321,26 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 		{{Key: "$unwind", Value: "$populated_properties"}},
 		{{Key: "$match", Value: bson.M{
 			"$expr": bson.M{
-				"$eq": []string{
-					"$properties.property_id",
-					"$populated_properties._id",
-				},
+				"$eq": []string{"$properties.property_id", "$populated_properties._id"},
 			},
 		}}},
-		{{Key: "$match", Value: bson.M{
-			"populated_properties.is_deleted": true,
-			"populated_properties.sold":       bson.M{"$ne": true},
-		}}},
-		{{Key: "$lookup", Value: bson.M{
+	}
+
+	// Only add match if filters exist
+	if len(matchStage) > 0 {
+		pipeline = append(pipeline, bson.D{{Key: "$match", Value: matchStage}})
+	}
+
+	// Add dealer lookup
+	pipeline = append(pipeline,
+		bson.D{{Key: "$lookup", Value: bson.M{
 			"from":         "dealers",
 			"localField":   "properties.dealer_id",
 			"foreignField": "_id",
 			"as":           "dealer_info",
 		}}},
-
-		// Stage 6: Unwind dealer array (should be single item)
-		{{Key: "$unwind", Value: "$dealer_info"}},
-	}
+		bson.D{{Key: "$unwind", Value: "$dealer_info"}},
+	)
 
 	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline)
 	if err != nil {
@@ -342,6 +355,8 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 
 	return result, nil
 }
+
+
 
 func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string, note string) error {
 	if status == "closed" {
