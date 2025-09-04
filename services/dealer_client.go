@@ -31,3 +31,8 @@ func (s *DealerClientService) GetDealerClientByPropertyID(ctx context.Context, d
 	}
 	return dealerClients, nil
 }
+
+func (s *DealerClientService) UpdateDealerClient(ctx context.Context, dealerClientID primitive.ObjectID, updateData interface{}) error {
+	_, err := s.DealerClientCollection.UpdateByID(ctx, dealerClientID, bson.M{"$set": updateData})
+	return err
+}

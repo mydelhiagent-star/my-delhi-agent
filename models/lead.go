@@ -7,11 +7,11 @@ import (
 )
 
 type Lead struct {
-	ID         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	Name       string             `json:"name" bson:"name"`
-	Phone      string             `json:"phone" bson:"phone"`
+	ID          primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name        string             `json:"name" bson:"name"`
+	Phone       string             `json:"phone" bson:"phone"`
 	Requirement string             `json:"requirement" bson:"requirement"`
-	Properties []PropertyInterest `json:"properties,omitempty" bson:"properties,omitempty"`
+	Properties  []PropertyInterest `json:"properties,omitempty" bson:"properties,omitempty"`
 
 	AadharNumber string `json:"aadhar_number,omitempty" bson:"aadhar_number,omitempty"`
 	AadharPhoto  string `json:"aadhar_photo,omitempty" bson:"aadhar_photo,omitempty"`
@@ -23,6 +23,7 @@ type PropertyInterest struct {
 	PropertyID primitive.ObjectID `json:"property_id" bson:"property_id"`
 	DealerID   primitive.ObjectID `json:"dealer_id" bson:"dealer_id"` // ← ADD THIS
 	Status     string             `json:"status" bson:"status"`
+	Note       string             `json:"note,omitempty" bson:"note,omitempty"`
 	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
 }
 
