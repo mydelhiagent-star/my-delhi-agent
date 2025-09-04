@@ -10,4 +10,7 @@ type DealerClient struct {
 	PropertyID primitive.ObjectID `json:"property_id" bson:"property_id"`
 	Name       string             `json:"name" bson:"name"`
 	Phone      string             `json:"phone" bson:"phone"`
+	Note       string             `json:"note" bson:"note"`
+	Status     string             `json:"status" bson:"status"`
+
 }

@@ -12,4 +12,5 @@ func RegisterDealerClientRoutes(r *mux.Router, h *handlers.DealerClientHandler, 
 	dealerClientRouter.Use(middlewares.JWTAuth(jwtSecret))
 	dealerClientRouter.HandleFunc("/", h.CreateDealerClient).Methods("POST")
 	dealerClientRouter.HandleFunc("/{propertyID}", h.GetDealerClientByPropertyID).Methods("GET")
+	dealerClientRouter.HandleFunc("/{dealerClientID}", h.UpdateDealerClient).Methods("PUT")
 }
