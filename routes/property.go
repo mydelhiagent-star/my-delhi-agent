@@ -21,8 +21,9 @@ func RegisterPropertyRoutes(r *mux.Router, h *handlers.PropertyHandler, jwtSecre
 	adminRouter := propertyRouter.PathPrefix("/admin").Subrouter()
 	adminRouter.Use(middlewares.RequireRole("admin"))
 	adminRouter.HandleFunc("/", h.GetAllProperties).Methods("GET")
+	adminRouter.HandleFunc("/search", h.SearchProperties).Methods("GET")
 
 	propertyRouter.HandleFunc("/", h.GetPropertiesByDealer).Methods("GET")
 	propertyRouter.HandleFunc("/number/{number}", h.GetPropertyByNumber).Methods("GET")
-	propertyRouter.HandleFunc("/search", h.SearchProperties).Methods("GET")
+	
 }
