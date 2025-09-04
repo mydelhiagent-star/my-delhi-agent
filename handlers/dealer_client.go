@@ -31,8 +31,6 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 	json.NewEncoder(w).Encode(dealerClient)
 }
 
-
-
 func (h *DealerClientHandler) GetDealerClientByPropertyID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	propertyID := vars["propertyID"]
@@ -73,16 +71,23 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 
-	var dealerClient models.DealerClient
-	if err := json.NewDecoder(r.Body).Decode(&dealerClient); err != nil {
+	var updateData struct {
+		Name   string `json:"name"`
+		Phone  string `json:"phone"`
+		Status string `json:"status"`
+		Note  string `json:"note"`
+		// Add other updateable fields here
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err = h.Service.UpdateDealerClient(r.Context(), objID, dealerClient)
+	err = h.Service.UpdateDealerClient(r.Context(), objID, updateData)
 	if err != nil {
 		http.Error(w, "Failed to update dealer client", http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(dealerClient)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client updated successfully"})
 }
