@@ -307,7 +307,7 @@ func (s *LeadService) GetPropertyDetails(ctx context.Context, soldStr string, de
 	}
 	if deletedStr != "" {
 		deletedVal := (strings.ToLower(deletedStr) == "true")
-		matchStage["populated_properties.deleted"] = deletedVal
+		matchStage["populated_properties.is_deleted"] = deletedVal
 	}
 
 	pipeline := mongo.Pipeline{
