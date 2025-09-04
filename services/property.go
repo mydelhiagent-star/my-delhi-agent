@@ -117,3 +117,26 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 
 	return properties, nil
 }
+
+func (s *PropertyService) SearchProperties(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Property, error) {
+	skip := (page - 1) * limit
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$skip", Value: int64(skip)}},
+		{{Key: "$limit", Value: int64(limit)}},
+	}
+
+	cursor, err := s.PropertyCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	
+	var properties []models.Property
+	if err := cursor.All(ctx, &properties); err != nil {
+		return nil, err
+	}
+	return properties, nil
+
+}
