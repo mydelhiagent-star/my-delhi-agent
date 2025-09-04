@@ -422,7 +422,7 @@ func (h *LeadHandler) DeleteLead(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Lead deleted successfully"})
 }
 
-func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Request) {
+func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	leadID := vars["leadID"]
 	propertyID := vars["propertyID"]
@@ -446,8 +446,9 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 
 	// Decode the status update
 	var updateData struct {
-		Status string `json:"status"`
+		Status    string  `json:"status"`
 		SoldPrice float64 `json:"sold_price"`
+		Note      string  `json:"note"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -468,8 +469,14 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Validate note: only allowed for "ongoing" status
+	if updateData.Note != "" && updateData.Status != "ongoing" {
+		http.Error(w, "Note is only allowed when status is 'ongoing'", http.StatusBadRequest)
+		return
+	}
+
 	// ← CALL the specific service method
-	err = h.Service.UpdatePropertyStatusByID(r.Context(), leadObjID, propertyObjID, updateData.Status)
+	err = h.Service.UpdatePropertyInterest(r.Context(), leadObjID, propertyObjID, updateData.Status, updateData.Note)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Property interest not found for this lead", http.StatusNotFound)
@@ -480,16 +487,14 @@ func (h *LeadHandler) UpdatePropertyStatus(w http.ResponseWriter, r *http.Reques
 	}
 	if updateData.Status == "converted" {
 		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
-			Sold: &[]bool{true}[0],
+			Sold:      &[]bool{true}[0],
 			SoldPrice: &updateData.SoldPrice,
-
 		})
 		if err != nil {
 			http.Error(w, "Failed to update property sold status", http.StatusInternalServerError)
 			return
 		}
 	}
-	
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{

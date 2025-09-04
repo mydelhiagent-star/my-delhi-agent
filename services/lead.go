@@ -343,7 +343,7 @@ func (s *LeadService) GetConflictingProperties(ctx context.Context) ([]bson.M, e
 	return result, nil
 }
 
-func (s *LeadService) UpdatePropertyStatusByID(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string) error {
+func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string, note string) error {
 	if status == "closed" {
 		// Remove the property from the lead's properties array
 		_, err := s.LeadCollection.UpdateOne(ctx,
@@ -352,9 +352,16 @@ func (s *LeadService) UpdatePropertyStatusByID(ctx context.Context, leadID primi
 		return err
 	} else {
 		// Update the status
+		updateFields := bson.M{"properties.$.status": status}
+
+		// Only add note if status is "ongoing" and note is provided
+		if status == "ongoing" && note != "" {
+			updateFields["properties.$.note"] = note
+		}
+
 		_, err := s.LeadCollection.UpdateOne(ctx,
 			bson.M{"_id": leadID, "properties.property_id": propertyID},
-			bson.M{"$set": bson.M{"properties.$.status": status}})
+			bson.M{"$set": updateFields})
 		return err
 	}
 }
