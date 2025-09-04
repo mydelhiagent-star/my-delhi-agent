@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"myapp/middlewares"
 	"myapp/models"
 	"myapp/services"
+	"myapp/utils"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -209,4 +212,88 @@ func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(property)
+}
+
+
+func (h *PropertyHandler) SearchProperties(w http.ResponseWriter, r *http.Request) {
+	filter := bson.M{}
+
+	// 🔹 Parse query params
+	queryParams := r.URL.Query()
+	for key, values := range queryParams {
+		if len(values) == 0 || values[0] == "" {
+			continue
+		}
+		val := values[0]
+
+		switch key {
+		case "name":
+			// Regex search
+			filter["name"] = bson.M{"$regex": primitive.Regex{Pattern: val, Options: "i"}}
+
+		case "location":
+			filter["location"] = val
+
+		case "sub_location":
+			filter["sub_location"] = val
+
+		case "dealer_id":
+			if objectID, err := primitive.ObjectIDFromHex(val); err == nil {
+				filter["dealer_id"] = objectID
+			}
+
+		case "sold":
+			// sold=true / sold=false
+			if val == "true" {
+				filter["sold"] = true
+			} else if val == "false" {
+				filter["sold"] = bson.M{"$ne": true} // either false or not set
+			}
+
+		case "min_price":
+			if price, err := strconv.Atoi(val); err == nil {
+				// merge with existing condition
+				utils.MergeRangeCondition(filter, "sold_price", "$gte", price)
+			}
+
+		case "max_price":
+			if price, err := strconv.Atoi(val); err == nil {
+				utils.MergeRangeCondition(filter, "sold_price", "$lte", price)
+			}
+
+		case "status":
+			// converted, available, etc.
+			filter["status"] = val
+		}
+	}
+
+	// 🔹 Pagination
+	page := 1
+	limit := 20
+	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
+		page = p
+	}
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
+
+	// 🔹 Fields
+	fieldsParam := r.URL.Query().Get("fields")
+	var fields []string
+	if fieldsParam != "" {
+		fields = strings.Split(fieldsParam, ",")
+	}
+
+	// 🔹 Search
+	properties, err := h.Service.SearchProperties(r.Context(), filter, page, limit, fields)
+	if err != nil {
+		http.Error(w, "Failed to search properties: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 🔹 Response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"properties": properties,
+	})
 }

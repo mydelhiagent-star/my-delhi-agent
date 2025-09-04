@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -21,6 +23,7 @@ type Property struct {
 	IsDeleted       bool               `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
 	Sold            bool               `json:"sold,omitempty" bson:"sold,omitempty"`
 	SoldPrice       float64            `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
+	SoldDate        *time.Time         `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
 }
 
 type PropertyUpdate struct {
@@ -38,4 +41,5 @@ type PropertyUpdate struct {
 	Sold            *bool     `json:"sold,omitempty" bson:"sold,omitempty"`
 	IsDeleted       *bool     `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
 	SoldPrice       *float64  `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
+	SoldDate        *time.Time `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
 }

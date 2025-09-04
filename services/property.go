@@ -10,9 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Assume you have a GCPService with these methods:
-// GenerateSignedURL(objectName string, expiry time.Duration) (string, error)
-// PublicFileURL(objectName string) string
+
 
 type PropertyService struct {
 	PropertyCollection *mongo.Collection
@@ -26,7 +24,6 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 		return primitive.NilObjectID, err
 	}
 
-	property.ID = primitive.NewObjectID()
 	property.PropertyNumber = propertyNumber
 
 	_, err = s.PropertyCollection.InsertOne(ctx, property)
@@ -119,4 +116,27 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 	}
 
 	return properties, nil
+}
+
+func (s *PropertyService) SearchProperties(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Property, error) {
+	skip := (page - 1) * limit
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$skip", Value: int64(skip)}},
+		{{Key: "$limit", Value: int64(limit)}},
+	}
+
+	cursor, err := s.PropertyCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	
+	var properties []models.Property
+	if err := cursor.All(ctx, &properties); err != nil {
+		return nil, err
+	}
+	return properties, nil
+
 }
