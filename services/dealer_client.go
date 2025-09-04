@@ -58,3 +58,8 @@ func (s *DealerClientService) UpdateDealerClient(ctx context.Context, dealerClie
 	_, err := s.DealerClientCollection.UpdateByID(ctx, dealerClientID, bson.M{"$set": updateData})
 	return err
 }
+
+func (s *DealerClientService) DeleteDealerClient(ctx context.Context, dealerClientID primitive.ObjectID) error {
+	_, err := s.DealerClientCollection.DeleteOne(ctx, bson.M{"_id": dealerClientID})
+	return err
+}

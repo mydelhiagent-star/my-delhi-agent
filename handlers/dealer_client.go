@@ -120,3 +120,24 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	}
 	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client updated successfully"})
 }
+
+
+func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	dealerClientID := vars["dealerClientID"]
+	if dealerClientID == "" {
+		http.Error(w, "Missing dealer client ID", http.StatusBadRequest)
+		return
+	}
+	objID, err := primitive.ObjectIDFromHex(dealerClientID)
+	if err != nil {
+		http.Error(w, "Invalid dealer client ID", http.StatusBadRequest)
+		return
+	}
+	err = h.Service.DeleteDealerClient(r.Context(), objID)
+	if err != nil {
+		http.Error(w, "Failed to delete dealer client", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client deleted successfully"})
+}
