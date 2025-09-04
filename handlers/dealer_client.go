@@ -109,7 +109,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 	if exists > 1 {
-		http.Error(w, "Phone number already exists for this property", http.StatusConflict)
+		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
 
