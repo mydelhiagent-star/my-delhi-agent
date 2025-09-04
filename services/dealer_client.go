@@ -13,15 +13,15 @@ type DealerClientService struct {
 	DealerClientCollection *mongo.Collection
 }
 
-func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, phone string) (int64, error) {
+func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, phone string) (bool, error) {
 	count, err := s.DealerClientCollection.CountDocuments(ctx, bson.M{
 		"dealer_id": dealerID,
 		"phone":     phone,
 	})
 	if err != nil {
-		return 0, err
+		return false, err
 	}
-	return count, nil
+	return count > 0, nil
 }
 
 func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (primitive.ObjectID, error) {

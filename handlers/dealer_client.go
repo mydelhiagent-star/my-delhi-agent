@@ -29,7 +29,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
 		return
 	}
-	if exists > 0 {
+	if exists {
 		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
@@ -108,7 +108,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
 		return
 	}
-	if exists > 1 {
+	if exists {
 		http.Error(w, "Phone number already exists", http.StatusConflict)
 		return
 	}
