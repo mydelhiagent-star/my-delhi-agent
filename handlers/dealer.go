@@ -7,6 +7,7 @@ import (
 	"myapp/models"
 	"myapp/response"
 	"myapp/services"
+	"myapp/validate"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,10 +24,8 @@ func (h *DealerHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
-	if dealer.Name == "" || dealer.Phone == "" || dealer.Password == "" ||
-		dealer.OfficeAddress == "" || dealer.ShopName == "" ||
-		dealer.Location == "" || dealer.SubLocation == "" {
-		response.Error(w, http.StatusBadRequest, "Missing required fields")
+	if err := validate.ValidateDealer(dealer); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	err := h.Service.CreateDealer(r.Context(), dealer)
@@ -137,6 +136,10 @@ func (h *DealerHandler) UpdateDealer(w http.ResponseWriter, r *http.Request) {
 	dealerObjID, err := primitive.ObjectIDFromHex(dealerID)
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, "Invalid dealer ID")
+		return
+	}
+	if err := validate.ValidateDealer(dealer); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

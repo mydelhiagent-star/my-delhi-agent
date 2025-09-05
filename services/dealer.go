@@ -26,19 +26,6 @@ type DealerService struct {
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
-	// ← VALIDATE inputs
-	if dealer.Phone == "" || len(dealer.Phone) < 10 {
-		return errors.New("invalid phone number")
-	}
-	if dealer.SubLocation == "" || len(dealer.SubLocation) < 2 {
-		return errors.New("invalid sublocation")
-	}
-	if !constants.IsValidLocation(dealer.Location) {
-		return errors.New("invalid location")
-	}
-	if dealer.Password == "" || len(dealer.Password) < 6 {
-		return errors.New("invalid password")
-	}
 
 	// ← START transaction session
 	session, err := s.DealerCollection.Database().Client().StartSession()
@@ -274,19 +261,7 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 
 func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
 	// ← VALIDATE inputs
-	if dealerID.IsZero() {
-		return errors.New("invalid dealer ID")
-	}
-	if dealer.Phone != "" && len(dealer.Phone) < 10 {
-		return errors.New("invalid phone number")
-	}
-	if dealer.SubLocation != "" && len(dealer.SubLocation) < 2 {
-		return errors.New("invalid sublocation")
-	}
-	if dealer.Location != "" && !constants.IsValidLocation(dealer.Location) {
-		return errors.New("invalid location")
-	}
-
+	
 	// ← START transaction session
 	session, err := s.DealerCollection.Database().Client().StartSession()
 	if err != nil {
