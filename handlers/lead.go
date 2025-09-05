@@ -596,36 +596,7 @@ func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
-	convertedMap := make(map[primitive.ObjectID]struct{})
-	for _, lead := range leads {
-		for _, property := range lead.Properties {
-			if property.Status == "converted" {
-				convertedMap[property.PropertyID] = struct{}{}
-			}
-		}
-	}
-
-	
-	filteredLeads := make([]models.Lead, 0)
-	for _, lead := range leads {
-		filteredProps := make([]models.PropertyInterest, 0) 
-		for _, property := range lead.Properties {
-			_, isConverted := convertedMap[property.PropertyID]
-			if isConverted && property.Status != "converted" {
-				continue 
-			}
-			filteredProps = append(filteredProps, property)
-		}
-
-		
-		if len(filteredProps) > 0 {
-			lead.Properties = filteredProps
-			filteredLeads = append(filteredLeads, lead)
-		}
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"leads": filteredLeads})
+	json.NewEncoder(w).Encode(map[string]interface{}{"leads": leads})
 }
 

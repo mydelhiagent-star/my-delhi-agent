@@ -17,6 +17,7 @@ import (
 
 type LeadService struct {
 	LeadCollection *mongo.Collection
+	PropertyCollection *mongo.Collection
 }
 
 func (s *LeadService) CreateLead(ctx context.Context, lead models.Lead) (primitive.ObjectID, error) {
@@ -431,20 +432,21 @@ func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID primiti
 }
 
 func (s *LeadService) GetDealerLeads(ctx context.Context, dealerID primitive.ObjectID) ([]models.Lead, error) {
-	// ← PROJECTION: Only return fields dealers are allowed to see
+	// Projection to return only necessary fields
 	projection := bson.M{
-		"_id":        1,
-		"name":       1,
+		"_id":         1,
+		"name":        1,
 		"requirement": 1,
-		"properties": 1,
-		"created_at": 1,
+		"properties":  1,
+		"created_at":  1,
 	}
 
 	opts := options.Find().
 		SetProjection(projection).
 		SetSort(bson.M{"_id": -1}). // Newest first
-		SetLimit(100)               // Prevent memory explosion
+		SetLimit(100)
 
+	// Step 1: Fetch leads
 	cursor, err := s.LeadCollection.Find(ctx, bson.M{"properties.dealer_id": dealerID}, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch dealer leads: %w", err)
@@ -455,5 +457,62 @@ func (s *LeadService) GetDealerLeads(ctx context.Context, dealerID primitive.Obj
 	if err = cursor.All(ctx, &leads); err != nil {
 		return nil, fmt.Errorf("failed to decode dealer leads: %w", err)
 	}
-	return leads, nil
+
+	// Step 2: Collect unique property IDs from the leads
+	propertyIDMap := make(map[primitive.ObjectID]struct{})
+	propertyIDs := make([]primitive.ObjectID, 0)
+	for _, lead := range leads {
+		for _, property := range lead.Properties {
+			id := property.PropertyID
+			if _, exists := propertyIDMap[id]; !exists {
+				propertyIDMap[id] = struct{}{}
+				propertyIDs = append(propertyIDs, id)
+			}
+		}
+	}
+
+	// Step 3: Fetch deleted or sold properties
+	invalidPropertyIDs := make(map[primitive.ObjectID]struct{})
+	if len(propertyIDs) > 0 {
+		cursor, err := s.PropertyCollection.Find(ctx, bson.M{
+			"_id": bson.M{"$in": propertyIDs},
+			"$or": bson.A{
+				bson.M{"is_deleted": true},
+				bson.M{"sold": true},
+			},
+		}, options.Find().SetProjection(bson.M{"_id": 1}))
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch deleted/sold properties: %w", err)
+		}
+		defer cursor.Close(ctx)
+
+		for cursor.Next(ctx) {
+			var result struct {
+				ID primitive.ObjectID `bson:"_id"`
+			}
+			if err := cursor.Decode(&result); err != nil {
+				return nil, fmt.Errorf("failed to decode invalid property: %w", err)
+			}
+			invalidPropertyIDs[result.ID] = struct{}{}
+		}
+	}
+
+	// Step 4: Filter out properties from leads
+	filteredLeads := make([]models.Lead, 0)
+	for _, lead := range leads {
+		filteredProperties := make([]models.PropertyInterest, 0)
+		for _, property := range lead.Properties {
+			if _, isInvalid := invalidPropertyIDs[property.PropertyID]; !isInvalid {
+				filteredProperties = append(filteredProperties, property)
+			}
+		}
+		if len(filteredProperties) > 0 {
+			lead.Properties = filteredProperties
+			filteredLeads = append(filteredLeads, lead)
+		}
+	}
+
+	return filteredLeads, nil
 }
+
