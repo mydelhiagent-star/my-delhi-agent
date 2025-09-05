@@ -429,3 +429,30 @@ func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID primiti
 		return err
 	}
 }
+
+func (s *LeadService) GetDealerLeads(ctx context.Context, dealerID primitive.ObjectID) ([]models.Lead, error) {
+	// ← PROJECTION: Only return fields dealers are allowed to see
+	projection := bson.M{
+		"_id":        1,
+		"name":       1,
+		"properties": 1,
+		"created_at": 1,
+	}
+
+	opts := options.Find().
+		SetProjection(projection).
+		SetSort(bson.M{"_id": -1}). // Newest first
+		SetLimit(100)               // Prevent memory explosion
+
+	cursor, err := s.LeadCollection.Find(ctx, bson.M{"properties.dealer_id": dealerID}, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch dealer leads: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var leads []models.Lead
+	if err = cursor.All(ctx, &leads); err != nil {
+		return nil, fmt.Errorf("failed to decode dealer leads: %w", err)
+	}
+	return leads, nil
+}
