@@ -18,24 +18,37 @@ import (
 )
 
 type DealerService struct {
-	DealerCollection *mongo.Collection
+	DealerCollection   *mongo.Collection
 	PropertyCollection *mongo.Collection
-	TokenCollection  *mongo.Collection
-	JWTSecret        string
-
+	TokenCollection    *mongo.Collection
+	JWTSecret          string
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
 	if !constants.IsValidLocation(dealer.Location) {
 		return errors.New("invalid location")
 	}
+
+	// ← SINGLE QUERY: Check both phone AND sublocation
 	existingDealer := models.Dealer{}
-	err := s.DealerCollection.FindOne(ctx, bson.M{"phone": dealer.Phone}).Decode(&existingDealer)
+	err := s.DealerCollection.FindOne(ctx, bson.M{
+		"$or": bson.A{
+			bson.M{"phone": dealer.Phone},
+			bson.M{"sublocation": dealer.SubLocation},
+		},
+	}).Decode(&existingDealer)
+
 	if err == nil {
-		return errors.New("phone number already exists")
+		// ← CHECK which field caused the conflict
+		if existingDealer.Phone == dealer.Phone {
+			return errors.New("phone number already exists")
+		}
+		if existingDealer.SubLocation == dealer.SubLocation {
+			return errors.New("sublocation already exists")
+		}
 	}
 	if err != mongo.ErrNoDocuments {
-		return errors.New("database error checking phone number" + err.Error())
+		return errors.New("database error checking dealer uniqueness" + err.Error())
 	}
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
@@ -188,43 +201,43 @@ func (s *DealerService) GetLocationsWithSubLocations(ctx context.Context) ([]mod
 
 // Replace in services/dealer.go
 func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation string) ([]map[string]interface{}, error) {
-    // Step 1: Get dealer first (lightweight query)
-    var dealer models.Dealer
-    err := s.DealerCollection.FindOne(ctx, bson.M{"sub_location": subLocation}).Decode(&dealer)
-    if err != nil {
-        return nil, err
-    }
+	// Step 1: Get dealer first (lightweight query)
+	var dealer models.Dealer
+	err := s.DealerCollection.FindOne(ctx, bson.M{"sub_location": subLocation}).Decode(&dealer)
+	if err != nil {
+		return nil, err
+	}
 
-    // Step 2: Get properties separately with pagination (prevents memory explosion)
-    filter := bson.M{
-        "dealer_id":  dealer.ID,
-        "is_deleted": bson.M{"$ne": true},
-        "sold":       bson.M{"$ne": true},
-    }
-    
-    opts := options.Find().
-        SetSort(bson.M{"_id": -1}).
-        SetLimit(50).                    // Limit properties per dealer
-        SetBatchSize(100)                // Batch size for large results
-    
-    cursor, err := s.PropertyCollection.Find(ctx, filter, opts)
-    if err != nil {
-        return nil, err
-    }
-    defer cursor.Close(ctx)
+	// Step 2: Get properties separately with pagination (prevents memory explosion)
+	filter := bson.M{
+		"dealer_id":  dealer.ID,
+		"is_deleted": bson.M{"$ne": true},
+		"sold":       bson.M{"$ne": true},
+	}
 
-    var properties []models.Property
-    if err := cursor.All(ctx, &properties); err != nil{
-        return nil, err
-    }
+	opts := options.Find().
+		SetSort(bson.M{"_id": -1}).
+		SetLimit(50).     // Limit properties per dealer
+		SetBatchSize(100) // Batch size for large results
 
-    // Step 3: Combine results
-    result := map[string]interface{}{
-        "dealer":     dealer,
-        "properties": properties,
-    }
+	cursor, err := s.PropertyCollection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
 
-    return []map[string]interface{}{result}, nil
+	var properties []models.Property
+	if err := cursor.All(ctx, &properties); err != nil {
+		return nil, err
+	}
+
+	// Step 3: Combine results
+	result := map[string]interface{}{
+		"dealer":     dealer,
+		"properties": properties,
+	}
+
+	return []map[string]interface{}{result}, nil
 }
 
 func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
