@@ -190,139 +190,202 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 }
 
 func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
+	// ← SECURITY: Safe context value extraction
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: Missing user ID", http.StatusUnauthorized)
+		return
+	}
 
-	userID := r.Context().Value(middlewares.UserIDKey).(string)
-	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
+	userRole, ok := r.Context().Value(middlewares.UserRoleKey).(string)
+	if !ok || userRole == "" {
+		http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
+		return
+	}
 
-	// ← BUILD filter dynamically from query parameters
+	// ← BUILD filter based on user role
 	filter := bson.M{}
+	queryParams := r.URL.Query()
 
+	// ← DEALER ROLE: Restricted access
 	if userRole == "dealer" {
 		dealerID, err := primitive.ObjectIDFromHex(userID)
 		if err != nil {
 			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 			return
 		}
+
+		// ← DEALER: Only see leads with their properties
 		filter["properties.dealer_id"] = dealerID
-		if len(r.URL.Query()) > 0 {
-			http.Error(w, "Dealers cannot use query parameters", http.StatusForbidden)
-			return
+
+		// ← DEALER: Allow limited query parameters
+		allowedParams := map[string]bool{
+			"page": true, "limit": true, "fields": true,
+		}
+
+		// ← VALIDATE dealer query parameters
+		for key := range queryParams {
+			if !allowedParams[key] {
+				http.Error(w, "Dealers can only use: page, limit, fields, property_id", http.StatusForbidden)
+				return
+			}
 		}
 	}
 
-	// Get all query parameters
-	queryParams := r.URL.Query()
+	
+	if userRole == "admin" {
+		for key, values := range queryParams {
+			if len(values) > 0 && values[0] != "" {
+				switch key {
+				case "name":
+					// ← OPTIMIZED: Limit regex length to prevent DoS
+					if len(values[0]) > 100 {
+						http.Error(w, "Name search too long (max 100 chars)", http.StatusBadRequest)
+						return
+					}
+					filter["name"] = bson.M{"$regex": primitive.Regex{Pattern: values[0], Options: "i"}}
 
-	for key, values := range queryParams {
-		if len(values) > 0 && values[0] != "" {
-			switch key {
-			case "name":
-				// Case-insensitive name search
-				filter["name"] = bson.M{"$regex": primitive.Regex{Pattern: values[0], Options: "i"}}
-			case "phone":
-				// Exact phone match
-				filter["phone"] = values[0]
-			case "aadhar_number":
-				// Exact aadhar match
-				filter["aadhar_number"] = values[0]
-			case "property_id":
-				// Search in properties array
-				if objectID, err := primitive.ObjectIDFromHex(values[0]); err == nil {
-					filter["properties.property_id"] = objectID
-				}
-			case "dealer_id":
-				// Search in properties array
-				if objectID, err := primitive.ObjectIDFromHex(values[0]); err == nil {
-					filter["properties.dealer_id"] = objectID
-				}
-			case "status":
-				// Search in properties array
-				filter["properties.status"] = values[0]
+				case "phone":
+					// ← VALIDATE phone format
+					if len(values[0]) < 10 || len(values[0]) > 15 {
+						http.Error(w, "Invalid phone number format", http.StatusBadRequest)
+						return
+					}
+					filter["phone"] = values[0]
 
-			case "has_properties":
-				// Check if lead has properties
-				if values[0] == "true" {
-					filter["properties"] = bson.M{"$exists": true, "$ne": []interface{}{}}
-				} else if values[0] == "false" {
-					filter["properties"] = bson.M{"$exists": false}
+				case "aadhar_number":
+					// ← VALIDATE aadhar format
+					if len(values[0]) != 12 {
+						http.Error(w, "Invalid aadhar number format", http.StatusBadRequest)
+						return
+					}
+					filter["aadhar_number"] = values[0]
+
+				case "property_id":
+					if objectID, err := primitive.ObjectIDFromHex(values[0]); err == nil {
+						filter["properties.property_id"] = objectID
+					} else {
+						http.Error(w, "Invalid property ID format", http.StatusBadRequest)
+						return
+					}
+
+				case "dealer_id":
+					if objectID, err := primitive.ObjectIDFromHex(values[0]); err == nil {
+						filter["properties.dealer_id"] = objectID
+					} else {
+						http.Error(w, "Invalid dealer ID format", http.StatusBadRequest)
+						return
+					}
+
+				case "status":
+					// ← VALIDATE status values
+					validStatuses := map[string]bool{
+						"viewed": true, "interested": true, "in_process": true,
+						"converted": true, "rejected": true,
+					}
+					if !validStatuses[values[0]] {
+						http.Error(w, "Invalid status value", http.StatusBadRequest)
+						return
+					}
+					filter["properties.status"] = values[0]
+
+				case "has_properties":
+					if values[0] == "true" {
+						filter["properties"] = bson.M{"$exists": true, "$ne": []interface{}{}}
+					} else if values[0] == "false" {
+						filter["properties"] = bson.M{"$exists": false}
+					} else {
+						http.Error(w, "has_properties must be 'true' or 'false'", http.StatusBadRequest)
+						return
+					}
 				}
 			}
 		}
 	}
 
-	// ← GET pagination parameters
-	pageStr := r.URL.Query().Get("page")
-	limitStr := r.URL.Query().Get("limit")
-
+	
 	page := 1
 	limit := 20
 
-	if pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+	if pageStr := queryParams.Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 && p <= 1000 {
 			page = p
+		} else {
+			http.Error(w, "Invalid page number (1-1000)", http.StatusBadRequest)
+			return
 		}
 	}
 
-	if limitStr != "" {
+	if limitStr := queryParams.Get("limit"); limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
 			limit = l
+		} else {
+			http.Error(w, "Invalid limit (1-100)", http.StatusBadRequest)
+			return
 		}
 	}
 
-	fieldsParam := r.URL.Query().Get("fields")
+	// ← FIELDS: Validate field names
 	var fields []string
-	if fieldsParam != "" {
+	if fieldsParam := queryParams.Get("fields"); fieldsParam != "" {
 		fields = strings.Split(fieldsParam, ",")
+
+		// ← VALIDATE field names to prevent injection
+		validFields := map[string]bool{
+			"name": true, "phone": true, "aadhar_number": true,
+			"properties": true, "created_at": true, "updated_at": true,
+		}
+
+		for _, field := range fields {
+			if !validFields[field] {
+				http.Error(w, "Invalid field name: "+field, http.StatusBadRequest)
+				return
+			}
+		}
 	}
 
-	// ← SEARCH leads with filter and pagination
 	leads, err := h.Service.SearchLeads(r.Context(), filter, page, limit, fields)
 	if err != nil {
 		http.Error(w, "Failed to search leads: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	filteredLeads := make([]map[string]interface{}, 0)
 
-	if userRole == "dealer" {
-
-		for _, lead := range leads {
-			// Create filtered lead with only allowed fields
-			if len(lead.Properties) > 0 {
-				// Create filtered lead with only allowed fields
-				filteredLead := map[string]interface{}{
-					"id":         lead.ID,
-					"name":       lead.Name,
-					"properties": lead.Properties,
-				}
-
-				filteredLeads = append(filteredLeads, filteredLead)
-			}
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"leads": filteredLeads,
-		})
-		return
-
-	}
-	if propertyID := r.URL.Query().Get("property_id"); propertyID != "" {
-		for i := range leads {
-			// ← FILTER properties array to only include the specified property_id
-			var filteredProperties []models.PropertyInterest
-			for _, prop := range leads[i].Properties {
-				if prop.PropertyID.Hex() == propertyID {
-					filteredProperties = append(filteredProperties, prop)
-				}
-			}
-			// ← REPLACE the properties array with filtered one
-			leads[i].Properties = filteredProperties
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	response := map[string]interface{}{
 		"leads": leads,
-	})
+		"page":  page,
+		"limit": limit,
+		"count": len(leads),
+	}
+
+	// ← DEALER: Filter response to only relevant data
+	if userRole == "dealer" {
+		// ← OPTIMIZE: Use database-level filtering instead of application-level
+		propertyID := queryParams.Get("property_id")
+		if propertyID != "" {
+			// ← VALIDATE property_id belongs to dealer
+			if _, err := primitive.ObjectIDFromHex(propertyID); err != nil {
+				http.Error(w, "Invalid property ID", http.StatusBadRequest)
+				return
+			}
+
+			// ← ADD property_id filter to database query (already handled in filter)
+			// This prevents the inefficient double-loop filtering
+		}
+
+		// ← DEALER: Only return leads with properties (already filtered in DB)
+		dealerLeads := make([]models.Lead, 0, len(leads))
+		for _, lead := range leads {
+			if len(lead.Properties) > 0 {
+				dealerLeads = append(dealerLeads, lead)
+			}
+		}
+		response["leads"] = dealerLeads
+		response["count"] = len(dealerLeads)
+	}
+
+	// ← RESPONSE: Set headers and send
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Request) {

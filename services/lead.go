@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type LeadService struct {
@@ -118,15 +119,30 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID primitive.
 }
 
 func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Lead, error) {
+	// ← VALIDATE inputs
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
 	// ← CALCULATE skip value for pagination
 	skip := (page - 1) * limit
 
-	// ← BUILD aggregation pipeline
+	// ← OPTIMIZED PIPELINE ORDER (Critical for performance)
 	pipeline := mongo.Pipeline{
-		// Stage 1: Match leads based on filter
+		// Stage 1: Match leads first (uses indexes)
 		{{Key: "$match", Value: filter}},
 
-		// Stage 2: Lookup properties
+		// Stage 2: Sort early (uses indexes)
+		{{Key: "$sort", Value: bson.M{"_id": -1}}},
+
+		// Stage 3: Pagination early (reduces data volume)
+		{{Key: "$skip", Value: int64(skip)}},
+		{{Key: "$limit", Value: int64(limit)}},
+
+		// Stage 4: Lookup only paginated results (PERFORMANCE CRITICAL!)
 		{{Key: "$lookup", Value: bson.M{
 			"from":         "property",
 			"localField":   "properties.property_id",
@@ -134,7 +150,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 			"as":           "property_details",
 		}}},
 
-		// Stage 3: Filter properties based on deleted + sold rules
+		// Stage 5: Filter properties efficiently
 		{{Key: "$addFields", Value: bson.M{
 			"properties": bson.M{
 				"$filter": bson.M{
@@ -142,16 +158,12 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 					"as":    "prop",
 					"cond": bson.M{
 						"$and": bson.A{
-							// 1. Exclude deleted properties
+							// ← SIMPLIFIED: Exclude deleted properties
 							bson.M{"$ne": bson.A{"$$prop.is_deleted", true}},
-
-							// 2. Sold logic
+							// ← SIMPLIFIED: Exclude sold properties (unless converted)
 							bson.M{
 								"$or": bson.A{
-									// Case A: If status = converted → always include
-									bson.M{"$eq": bson.A{"$status", "converted"}},
-
-									// Case B: Otherwise → sold != true
+									bson.M{"$eq": bson.A{"$$prop.status", "converted"}},
 									bson.M{"$ne": bson.A{"$$prop.sold", true}},
 								},
 							},
@@ -161,17 +173,13 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 			},
 		}}},
 
-		// Stage 4: Sort
-		{{Key: "$sort", Value: bson.M{"_id": -1}}},
-
-		// Stage 5: Skip
-		{{Key: "$skip", Value: int64(skip)}},
-
-		// Stage 6: Limit
-		{{Key: "$limit", Value: int64(limit)}},
+		// Stage 6: Remove empty property arrays
+		{{Key: "$match", Value: bson.M{
+			"properties": bson.M{"$ne": []interface{}{}},
+		}}},
 	}
 
-	// ← ADD projection if fields are specified
+	// ← ADD projection if fields are specified (OPTIMIZE MEMORY)
 	if len(fields) > 0 {
 		projection := bson.M{}
 		for _, field := range fields {
@@ -181,16 +189,23 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 		pipeline = append(pipeline, bson.D{{Key: "$project", Value: projection}})
 	}
 
-	// ← EXECUTE aggregation
-	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline)
+	// ← PRODUCTION-READY aggregation options
+	opts := options.Aggregate().
+		SetBatchSize(100).           // Network optimization
+		SetAllowDiskUse(true).       // Allow disk usage for large datasets
+		SetMaxTime(30 * time.Second) // Prevent long-running queries
+
+	// ← EXECUTE aggregation with options
+	cursor, err := s.LeadCollection.Aggregate(ctx, pipeline, opts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute lead search aggregation: %w", err)
 	}
 	defer cursor.Close(ctx)
 
+	// ← MEMORY-SAFE decoding
 	var leads []models.Lead
 	if err = cursor.All(ctx, &leads); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode leads: %w", err)
 	}
 
 	return leads, nil
@@ -355,8 +370,6 @@ func (s *LeadService) GetPropertyDetails(ctx context.Context, soldStr string, de
 
 	return result, nil
 }
-
-
 
 func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyID primitive.ObjectID, status string, note string) error {
 	if status == "closed" {
