@@ -19,8 +19,10 @@ import (
 
 type DealerService struct {
 	DealerCollection *mongo.Collection
+	PropertyCollection *mongo.Collection
 	TokenCollection  *mongo.Collection
 	JWTSecret        string
+
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
@@ -184,58 +186,45 @@ func (s *DealerService) GetLocationsWithSubLocations(ctx context.Context) ([]mod
 
 // In services/dealer_service.go
 
+// Replace in services/dealer.go
 func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation string) ([]map[string]interface{}, error) {
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{"sub_location": subLocation}}},
-		{
-			{Key: "$lookup", Value: bson.M{
-				"from":         "property",
-				"localField":   "_id",
-				"foreignField": "dealer_id",
-				"as":           "properties",
-			}},
-		},
-		{{Key: "$addFields", Value: bson.M{
-			"properties": bson.M{
-				"$filter": bson.M{
-					"input": "$properties",
-					"cond": bson.M{
-						"$and": bson.A{
-							bson.M{"$ne": []interface{}{"$$this.is_deleted", true}},
-							bson.M{"$ne": []interface{}{"$$this.sold", true}},
-						},
-					},
-				},
-			},
-		}}},
-		{{Key: "$addFields", Value: bson.M{
-			"properties": bson.M{
-				"$sortArray": bson.M{
-					"input": "$properties",
-					"sortBy": bson.M{
-						"_id": -1, // ← Sort by ObjectID descending (latest first)
-					},
-				},
-			},
-		}}},
-	}
+    // Step 1: Get dealer first (lightweight query)
+    var dealer models.Dealer
+    err := s.DealerCollection.FindOne(ctx, bson.M{"sub_location": subLocation}).Decode(&dealer)
+    if err != nil {
+        return nil, err
+    }
 
-	cursor, err := s.DealerCollection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
+    // Step 2: Get properties separately with pagination (prevents memory explosion)
+    filter := bson.M{
+        "dealer_id":  dealer.ID,
+        "is_deleted": bson.M{"$ne": true},
+        "sold":       bson.M{"$ne": true},
+    }
+    
+    opts := options.Find().
+        SetSort(bson.M{"_id": -1}).
+        SetLimit(50).                    // Limit properties per dealer
+        SetBatchSize(100)                // Batch size for large results
+    
+    cursor, err := s.PropertyCollection.Find(ctx, filter, opts)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
 
-	var results []map[string]interface{}
-	if err := cursor.All(ctx, &results); err != nil {
-		return nil, err
-	}
+    var properties []models.Property
+    if err := cursor.All(ctx, &properties); err != nil{
+        return nil, err
+    }
 
-	if len(results) == 0 {
-		return nil, nil
-	}
+    // Step 3: Combine results
+    result := map[string]interface{}{
+        "dealer":     dealer,
+        "properties": properties,
+    }
 
-	return results, nil // one dealer per subLocation
+    return []map[string]interface{}{result}, nil
 }
 
 func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
