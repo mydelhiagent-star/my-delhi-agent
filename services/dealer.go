@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"myapp/constants"
@@ -25,36 +26,67 @@ type DealerService struct {
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
+	// ← VALIDATE inputs
+	if dealer.Phone == "" || len(dealer.Phone) < 10 {
+		return errors.New("invalid phone number")
+	}
+	if dealer.SubLocation == "" || len(dealer.SubLocation) < 2 {
+		return errors.New("invalid sublocation")
+	}
 	if !constants.IsValidLocation(dealer.Location) {
 		return errors.New("invalid location")
 	}
-
-	// ← SINGLE QUERY: Check both phone AND sublocation
-	existingDealer := models.Dealer{}
-	err := s.DealerCollection.FindOne(ctx, bson.M{
-		"$or": bson.A{
-			bson.M{"phone": dealer.Phone},
-			bson.M{"sublocation": dealer.SubLocation},
-		},
-	}).Decode(&existingDealer)
-
-	if err == nil {
-		// ← CHECK which field caused the conflict
-		if existingDealer.Phone == dealer.Phone {
-			return errors.New("phone number already exists")
-		}
-		if existingDealer.SubLocation == dealer.SubLocation {
-			return errors.New("sublocation already exists")
-		}
-	}
-	if err != mongo.ErrNoDocuments {
-		return errors.New("database error checking dealer uniqueness" + err.Error())
+	if dealer.Password == "" || len(dealer.Password) < 6 {
+		return errors.New("invalid password")
 	}
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
-	dealer.Password = string(hash)
+	// ← START transaction session
+	session, err := s.DealerCollection.Database().Client().StartSession()
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer session.EndSession(ctx)
 
-	_, err = s.DealerCollection.InsertOne(ctx, dealer)
+	// ← EXECUTE transaction
+	_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// ← CHECK for existing phone/sublocation
+		existingDealer := models.Dealer{}
+		err := s.DealerCollection.FindOne(sessCtx, bson.M{
+			"$or": bson.A{
+				bson.M{"phone": dealer.Phone},
+				bson.M{"sublocation": dealer.SubLocation},
+			},
+		}).Decode(&existingDealer)
+
+		if err == nil {
+			// ← CHECK which field caused the conflict
+			if existingDealer.Phone == dealer.Phone {
+				return nil, errors.New("phone number already exists")
+			}
+			if existingDealer.SubLocation == dealer.SubLocation {
+				return nil, errors.New("sublocation already exists")
+			}
+		}
+		if err != mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("database error checking dealer uniqueness: %w", err)
+		}
+
+		// ← HASH password
+		hash, err := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		}
+		dealer.Password = string(hash)
+
+		// ← INSERT dealer (within transaction)
+		_, err = s.DealerCollection.InsertOne(sessCtx, dealer)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create dealer: %w", err)
+		}
+
+		return nil, nil
+	})
+
 	return err
 }
 
@@ -241,7 +273,70 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 }
 
 func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
-	_, err := s.DealerCollection.UpdateByID(ctx, dealerID, bson.M{"$set": dealer})
+	// ← VALIDATE inputs
+	if dealerID.IsZero() {
+		return errors.New("invalid dealer ID")
+	}
+	if dealer.Phone != "" && len(dealer.Phone) < 10 {
+		return errors.New("invalid phone number")
+	}
+	if dealer.SubLocation != "" && len(dealer.SubLocation) < 2 {
+		return errors.New("invalid sublocation")
+	}
+	if dealer.Location != "" && !constants.IsValidLocation(dealer.Location) {
+		return errors.New("invalid location")
+	}
+
+	// ← START transaction session
+	session, err := s.DealerCollection.Database().Client().StartSession()
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer session.EndSession(ctx)
+
+	// ← EXECUTE transaction
+	_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// ← CHECK for existing phone/sublocation (excluding current dealer)
+		existingDealer := models.Dealer{}
+		err := s.DealerCollection.FindOne(sessCtx, bson.M{
+			"_id": bson.M{"$ne": dealerID}, // ← EXCLUDE current dealer
+			"$or": bson.A{
+				bson.M{"phone": dealer.Phone},
+				bson.M{"sublocation": dealer.SubLocation},
+			},
+		}).Decode(&existingDealer)
+
+		if err == nil {
+			// ← CHECK which field caused the conflict
+			if existingDealer.Phone == dealer.Phone {
+				return nil, errors.New("phone number already exists for another dealer")
+			}
+			if existingDealer.SubLocation == dealer.SubLocation {
+				return nil, errors.New("sublocation already exists for another dealer")
+			}
+		}
+		if err != mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("database error checking dealer uniqueness: %w", err)
+		}
+
+		// ← HASH password if provided
+		if dealer.Password != "" {
+			hash, err := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
+			if err != nil {
+				return nil, fmt.Errorf("failed to hash password: %w", err)
+			}
+			dealer.Password = string(hash)
+		}
+
+		// ← UPDATE dealer (within transaction)
+		_, err = s.DealerCollection.UpdateByID(sessCtx, dealerID, bson.M{"$set": dealer})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update dealer: %w", err)
+		}
+
+		return nil, nil
+	})
+
 	return err
 }
 
