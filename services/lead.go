@@ -435,6 +435,7 @@ func (s *LeadService) GetDealerLeads(ctx context.Context, dealerID primitive.Obj
 	projection := bson.M{
 		"_id":        1,
 		"name":       1,
+		"requirement": 1,
 		"properties": 1,
 		"created_at": 1,
 	}

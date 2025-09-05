@@ -571,7 +571,7 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 	})
 }
 
-func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request){
+func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middlewares.UserIDKey).(string)
 	if !ok || userID == "" {
 		http.Error(w, "Unauthorized: Missing user ID", http.StatusUnauthorized)
@@ -583,6 +583,7 @@ func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request){
 		http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
 		return
 	}
+
 	dealerID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
@@ -594,10 +595,37 @@ func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request){
 		http.Error(w, "Failed to fetch dealer leads", http.StatusInternalServerError)
 		return
 	}
-	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"leads": leads})
-	
-	
 
+	
+	convertedMap := make(map[primitive.ObjectID]struct{})
+	for _, lead := range leads {
+		for _, property := range lead.Properties {
+			if property.Status == "converted" {
+				convertedMap[property.PropertyID] = struct{}{}
+			}
+		}
+	}
+
+	
+	filteredLeads := make([]models.Lead, 0)
+	for _, lead := range leads {
+		filteredProps := make([]models.PropertyInterest, 0) 
+		for _, property := range lead.Properties {
+			_, isConverted := convertedMap[property.PropertyID]
+			if isConverted && property.Status != "converted" {
+				continue 
+			}
+			filteredProps = append(filteredProps, property)
+		}
+
+		
+		if len(filteredProps) > 0 {
+			lead.Properties = filteredProps
+			filteredLeads = append(filteredLeads, lead)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"leads": filteredLeads})
 }
+
