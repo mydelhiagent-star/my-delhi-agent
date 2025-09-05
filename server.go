@@ -46,6 +46,7 @@ func main() {
 
 	leadService := &services.LeadService{
 		LeadCollection: leadCollection,
+		PropertyCollection: propertyCollection,
 	}
 
 	propertyService := &services.PropertyService{

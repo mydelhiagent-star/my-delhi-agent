@@ -13,7 +13,19 @@ func ConnectMongo(uri string) *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	// ← PRODUCTION-READY CONNECTION POOL OPTIONS
+	clientOptions := options.Client().ApplyURI(uri).
+		SetMaxPoolSize(100).                        // Maximum connections in pool
+		SetMinPoolSize(5).                          // Minimum connections in pool
+		SetMaxConnIdleTime(30 * time.Minute).       // Close idle connections after 30min
+		SetServerSelectionTimeout(5 * time.Second). // Timeout for server selection
+		SetConnectTimeout(10 * time.Second).        // Connection timeout
+		SetSocketTimeout(30 * time.Second).         // Socket timeout
+		SetHeartbeatInterval(10 * time.Second).     // Heartbeat interval
+		SetRetryWrites(true).                       // Retry failed writes
+		SetRetryReads(true)                         // Retry failed reads
+
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,6 +36,6 @@ func ConnectMongo(uri string) *mongo.Client {
 		log.Fatal("MongoDB not reachable:", err)
 	}
 
-	log.Println("✅ Connected to MongoDB")
+	log.Println("✅ Connected to MongoDB with optimized connection pool")
 	return client
 }
