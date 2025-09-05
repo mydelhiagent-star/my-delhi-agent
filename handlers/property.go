@@ -8,6 +8,7 @@ import (
 
 	"myapp/middlewares"
 	"myapp/models"
+	"myapp/response"
 	"myapp/services"
 	"myapp/utils"
 
@@ -26,19 +27,19 @@ type PropertyHandler struct {
 func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request) {
 	var property models.Property
 	if err := json.NewDecoder(r.Body).Decode(&property); err != nil {
-		http.Error(w, "Invalid request body "+err.Error(), http.StatusBadRequest)
+		response.WithError(w, r, "Invalid request body: "+err.Error())
 		return
 	}
 
 	dealerIDStr, ok := r.Context().Value(middlewares.UserIDKey).(string)
 	if !ok || dealerIDStr == "" {
-		http.Error(w, "Unauthorized - Dealer ID not found", http.StatusUnauthorized)
+		response.WithUnauthorized(w, r, "Dealer ID not found")
 		return
 	}
 
 	dealerIDObj, err := primitive.ObjectIDFromHex(dealerIDStr)
 	if err != nil {
-		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
+		response.WithValidationError(w, r, "Invalid dealer ID")
 		return
 	}
 
@@ -60,11 +61,11 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 
 	id, err := h.Service.CreateProperty(r.Context(), property)
 	if err != nil {
-		http.Error(w, "Failed to create property", http.StatusInternalServerError)
+		response.WithInternalError(w, r, "Failed to create property: "+err.Error())
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
+	response.WithPayload(w, r, map[string]string{
 		"message":    "Property created successfully",
 		"propertyId": id.Hex(),
 	})
@@ -75,21 +76,21 @@ func (h *PropertyHandler) GetProperty(w http.ResponseWriter, r *http.Request) {
 	idParam := mux.Vars(r)["id"]
 	objID, err := primitive.ObjectIDFromHex(idParam)
 	if err != nil {
-		http.Error(w, "Invalid property ID", http.StatusBadRequest)
+		response.WithValidationError(w, r, "Invalid property ID")
 		return
 	}
 
 	property, err := h.Service.GetPropertyByID(objID)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			http.Error(w, "Property not found", http.StatusNotFound)
+			response.WithNotFound(w, r, "Property not found")
 		} else {
-			http.Error(w, "Failed to fetch property", http.StatusInternalServerError)
+			response.WithInternalError(w, r, "Failed to fetch property: "+err.Error())
 		}
 		return
 	}
 
-	json.NewEncoder(w).Encode(property)
+	response.WithPayload(w, r, property)
 }
 
 // Update
@@ -206,28 +207,27 @@ func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Req
 	propertyNumberStr := vars["number"]
 
 	if propertyNumberStr == "" {
-		http.Error(w, "Property number is required", http.StatusBadRequest)
+		response.WithValidationError(w, r, "Property number is required")
 		return
 	}
 
 	propertyNumber, err := strconv.ParseInt(propertyNumberStr, 10, 64)
 	if err != nil {
-		http.Error(w, "Invalid property number", http.StatusBadRequest)
+		response.WithValidationError(w, r, "Invalid property number")
 		return
 	}
 
 	property, err := h.Service.GetPropertyByNumber(r.Context(), propertyNumber)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			http.Error(w, "Property not found", http.StatusNotFound)
+			response.WithNotFound(w, r, "Property not found")
 		} else {
-			http.Error(w, "Failed to fetch property", http.StatusInternalServerError)
+			response.WithInternalError(w, r, "Failed to fetch property: "+err.Error())
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(property)
+	response.WithPayload(w, r, property)
 }
 
 func (h *PropertyHandler) SearchProperties(w http.ResponseWriter, r *http.Request) {

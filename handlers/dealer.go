@@ -21,41 +21,41 @@ func (h *DealerHandler) CreateDealer(w http.ResponseWriter, r *http.Request) {
 
 	var dealer models.Dealer
 	if err := json.NewDecoder(r.Body).Decode(&dealer); err != nil {
-		response.Error(w, http.StatusBadRequest, "Invalid request body")
+		response.WithError(w, r, "Invalid request body")
 		return
 	}
 	if err := validate.ValidateDealer(dealer); err != nil {
-		response.Error(w, http.StatusBadRequest, err.Error())
+		response.WithValidationError(w, r, err.Error())
 		return
 	}
 	err := h.Service.CreateDealer(r.Context(), dealer)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, err.Error())
+		response.WithInternalError(w, r, err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, map[string]string{"message": "Dealer created"})
+	response.WithMessage(w, r, "Dealer created successfully")
 }
 
 func (h *DealerHandler) LoginDealer(w http.ResponseWriter, r *http.Request) {
 
 	var creds models.Dealer
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		response.Error(w, http.StatusBadRequest, "Invalid request body")
+		response.WithError(w, r, "Invalid request body")
 		return
 	}
 
 	if creds.Phone == "" || creds.Password == "" {
-		response.Error(w, http.StatusBadRequest, "Phone and password are required")
+		response.WithValidationError(w, r, "Phone and password are required")
 		return
 	}
 
 	token, err := h.Service.LoginDealer(r.Context(), creds.Phone, creds.Password)
 	if err != nil {
-		response.Error(w, http.StatusUnauthorized, err.Error())
+		response.WithUnauthorized(w, r, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusOK, map[string]string{"token": token})
+	response.WithPayload(w, r, map[string]string{"token": token})
 }
 
 func (h *DealerHandler) GetDealersBySubLocation(w http.ResponseWriter, r *http.Request) {

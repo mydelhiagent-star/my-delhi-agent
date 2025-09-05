@@ -16,13 +16,13 @@ type CloudfareHandler struct {
 
 func (h *CloudfareHandler) GeneratePresignedURL(w http.ResponseWriter, r *http.Request) {
 	if h.Service == nil {
-		http.Error(w, "Service not initialized", http.StatusInternalServerError)
+		response.WithInternalError(w, r, "Service not initialized")
 		return
 	}
 	userID, _ := r.Context().Value(middlewares.UserIDKey).(string)
 
 	if userID == "" {
-		response.Error(w, http.StatusUnauthorized, "Unauthorized")
+		response.WithUnauthorized(w, r, "Unauthorized")
 		return
 	}
 
@@ -31,12 +31,12 @@ func (h *CloudfareHandler) GeneratePresignedURL(w http.ResponseWriter, r *http.R
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		response.WithError(w, r, "Invalid request body")
 		return
 	}
 
 	if req.Count <= 0 {
-		http.Error(w, "Count must be greater than 0", http.StatusBadRequest)
+		response.WithValidationError(w, r, "Count must be greater than 0")
 		return
 	}
 
@@ -53,7 +53,7 @@ func (h *CloudfareHandler) GeneratePresignedURL(w http.ResponseWriter, r *http.R
 		// Generate presigned URL (15 minutes expiry)
 		url, err := h.Service.GeneratePresignedURL(r.Context(), key, 15*time.Minute)
 		if err != nil {
-			response.Error(w, http.StatusInternalServerError, "Failed to generate upload URL")
+			response.WithInternalError(w, r, "Failed to generate upload URL")
 			return
 		}
 
@@ -64,7 +64,7 @@ func (h *CloudfareHandler) GeneratePresignedURL(w http.ResponseWriter, r *http.R
 	}
 
 	// ← CHANGED: Return proper response structure
-	response.JSON(w, http.StatusOK, map[string]interface{}{
+	response.WithPayload(w, r, map[string]interface{}{
 		"presignedUrls": urls,
 	})
 }
