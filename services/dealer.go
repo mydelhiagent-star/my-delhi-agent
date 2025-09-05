@@ -247,7 +247,6 @@ func (s *DealerService) DeleteDealer(ctx context.Context, dealerID primitive.Obj
 		propertyUpdate := bson.M{
 			"$set": bson.M{
 				"is_deleted": true,
-				"updated_at": time.Now(),
 			},
 		}
 		_, err := propertyCollection.UpdateMany(sessCtx,

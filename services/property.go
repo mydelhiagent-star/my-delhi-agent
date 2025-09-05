@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"myapp/models"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -9,8 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-
 
 type PropertyService struct {
 	PropertyCollection *mongo.Collection
@@ -97,22 +96,40 @@ func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Proper
 	return properties, nil
 }
 
-func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID) ([]models.Property, error) {
+func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID, page, limit int) ([]models.Property, error) {
+	// ← VALIDATE inputs
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20 // Default limit
+	}
+
 	filter := bson.M{
 		"dealer_id":  dealerID,
 		"is_deleted": bson.M{"$ne": true},
 		"sold":       bson.M{"$ne": true},
 	}
 
-	cursor, err := s.PropertyCollection.Find(ctx, filter)
+	// ← CALCULATE skip for pagination
+	skip := (page - 1) * limit
+
+	// ← PRODUCTION-READY options
+	opts := options.Find().
+		SetSort(bson.M{"_id": -1}). // Newest first
+		SetSkip(int64(skip)).       // Pagination
+		SetLimit(int64(limit)).     // Memory protection
+		SetBatchSize(100)           // Network optimization
+
+	cursor, err := s.PropertyCollection.Find(ctx, filter, opts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query properties: %w", err)
 	}
 	defer cursor.Close(ctx)
 
 	var properties []models.Property
 	if err := cursor.All(ctx, &properties); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode properties: %w", err)
 	}
 
 	return properties, nil
@@ -132,7 +149,7 @@ func (s *PropertyService) SearchProperties(ctx context.Context, filter bson.M, p
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	
+
 	var properties []models.Property
 	if err := cursor.All(ctx, &properties); err != nil {
 		return nil, err

@@ -174,15 +174,31 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 		}
 	}
 
-	// Fetch properties
-	properties, err := h.Service.GetPropertiesByDealer(r.Context(), dealerID)
+	// ← PAGINATION parameters
+	page := 1
+	limit := 20
+	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
+		page = p
+	}
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
+
+	// ← FETCH properties with pagination
+	properties, err := h.Service.GetPropertiesByDealer(r.Context(), dealerID, page, limit)
 	if err != nil {
 		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// ← RESPONSE with pagination info
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(properties)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"properties": properties,
+		"page":       page,
+		"limit":      limit,
+		"count":      len(properties),
+	})
 }
 
 func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Request) {
@@ -213,7 +229,6 @@ func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Req
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(property)
 }
-
 
 func (h *PropertyHandler) SearchProperties(w http.ResponseWriter, r *http.Request) {
 	filter := bson.M{}
