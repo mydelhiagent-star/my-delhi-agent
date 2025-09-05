@@ -158,13 +158,49 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter bson.M, page, limi
 					"as":    "prop",
 					"cond": bson.M{
 						"$and": bson.A{
-							// ← SIMPLIFIED: Exclude deleted properties
-							bson.M{"$ne": bson.A{"$$prop.is_deleted", true}},
-							// ← SIMPLIFIED: Exclude sold properties (unless converted)
+							// ← CORRECT: Check if property exists in property_details (not deleted)
+							bson.M{
+								"$gt": bson.A{
+									bson.M{
+										"$size": bson.M{
+											"$filter": bson.M{
+												"input": "$property_details",
+												"cond":  bson.M{"$eq": bson.A{"$$this._id", "$$prop.property_id"}},
+											},
+										},
+									},
+									0,
+								},
+							},
+							// ← CORRECT: Include converted leads OR non-sold properties
 							bson.M{
 								"$or": bson.A{
+									// Case 1: Lead status is "converted" → always include
 									bson.M{"$eq": bson.A{"$$prop.status", "converted"}},
-									bson.M{"$ne": bson.A{"$$prop.sold", true}},
+									// Case 2: Lead status is NOT "converted" → check if property is not sold
+									bson.M{
+										"$and": bson.A{
+											bson.M{"$ne": bson.A{"$$prop.status", "converted"}},
+											bson.M{
+												"$gt": bson.A{
+													bson.M{
+														"$size": bson.M{
+															"$filter": bson.M{
+																"input": "$property_details",
+																"cond": bson.M{
+																	"$and": bson.A{
+																		bson.M{"$eq": bson.A{"$$this._id", "$$prop.property_id"}},
+																		bson.M{"$ne": bson.A{"$$this.sold", true}},
+																	},
+																},
+															},
+														},
+													},
+													0,
+												},
+											},
+										},
+									},
 								},
 							},
 						},
