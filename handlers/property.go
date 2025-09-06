@@ -54,7 +54,6 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 
 	now := time.Now()
 	property.CreatedAt = now
-	
 
 	publicURLPrefix := h.CloudflarePublicURL
 

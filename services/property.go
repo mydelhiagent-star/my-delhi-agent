@@ -18,30 +18,30 @@ type PropertyService struct {
 }
 
 func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
-    var resultID primitive.ObjectID
-    
-    err := utils.Retry(ctx, func() error {
-        propertyNumber, err := s.getNextPropertyNumber(ctx)
-        if err != nil {
-            return err
-        }
-        
-        property.PropertyNumber = propertyNumber
-        
-        result, err := s.PropertyCollection.InsertOne(ctx, property)
-        if err != nil {
-            return err
-        }
-        
-        resultID = result.InsertedID.(primitive.ObjectID)
-        return nil
-    })
-    
-    if err != nil {
-        return primitive.NilObjectID, err
-    }
-    
-    return resultID, nil
+	var resultID primitive.ObjectID
+
+	err := utils.Retry(ctx, func() error {
+		propertyNumber, err := s.getNextPropertyNumber(ctx)
+		if err != nil {
+			return err
+		}
+
+		property.PropertyNumber = propertyNumber
+
+		result, err := s.PropertyCollection.InsertOne(ctx, property)
+		if err != nil {
+			return err
+		}
+
+		resultID = result.InsertedID.(primitive.ObjectID)
+		return nil
+	})
+
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+
+	return resultID, nil
 }
 
 // ← GENERATE next property number using counter collection
