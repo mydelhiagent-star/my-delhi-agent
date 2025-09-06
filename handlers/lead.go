@@ -506,9 +506,9 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 
 	// Decode the status update
 	var updateData struct {
-		Status    string  `json:"status"`
-		SoldPrice float64 `json:"sold_price"`
-		Note      string  `json:"note"`
+		Status    string `json:"status"`
+		SoldPrice int64  `json:"sold_price"`
+		Note      string `json:"note"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -550,6 +550,7 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
 			Sold:      &[]bool{true}[0],
 			SoldPrice: &updateData.SoldPrice,
+			UpdatedAt: &soldDate,
 			SoldDate:  &soldDate,
 		})
 		if err != nil {
