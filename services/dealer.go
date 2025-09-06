@@ -27,32 +27,31 @@ type DealerService struct {
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
-    // ← HASH password before insertion
-    hash, err := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
-    if err != nil {
-        return fmt.Errorf("failed to hash password: %w", err)
-    }
-    dealer.Password = string(hash)
+	// ← HASH password before insertion
+	hash, err := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password")
+	}
+	dealer.Password = string(hash)
 
-    // ← Insert dealer (relying on MongoDB's unique constraints)
-    _, err = s.DealerCollection.InsertOne(ctx, dealer)
-    if err != nil {
-        // Check if the error is a unique constraint violation (e.g., phone or sublocation already exists)
-        if mongo.IsDuplicateKeyError(err) {
-            // Parse the error details to find out which field caused the conflict
-            if strings.Contains(err.Error(), "phone") {
-                return fmt.Errorf("phone number already exists: %w", err)
-            }
-            if strings.Contains(err.Error(), "sublocation") {
-                return fmt.Errorf("sublocation already exists: %w", err)
-            }
-        }
-        return fmt.Errorf("failed to create dealer: %w", err)
-    }
+	// ← Insert dealer (relying on MongoDB's unique constraints)
+	_, err = s.DealerCollection.InsertOne(ctx, dealer)
+	if err != nil {
+		// Check if the error is a unique constraint violation (e.g., phone or sublocation already exists)
+		if mongo.IsDuplicateKeyError(err) {
+			// Parse the error details to find out which field caused the conflict
+			if strings.Contains(err.Error(), "phone") {
+				return fmt.Errorf("phone number already exists")
+			}
+			if strings.Contains(err.Error(), "sub_location") {
+				return fmt.Errorf("sublocation already exists")
+			}
+		}
+		return fmt.Errorf("failed to create dealer")
+	}
 
-    return nil
+	return nil
 }
-
 
 func (s *DealerService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
 
@@ -238,7 +237,7 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 
 func (s *DealerService) UpdateDealer(ctx context.Context, dealerID primitive.ObjectID, dealer models.Dealer) error {
 	// ← VALIDATE inputs
-	
+
 	// ← START transaction session
 	session, err := s.DealerCollection.Database().Client().StartSession()
 	if err != nil {
