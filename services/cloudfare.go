@@ -84,7 +84,7 @@ func (s *CloudflareR2Service) GeneratePresignedURL(ctx context.Context, key stri
 		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
 
-	log.Printf("Generated presigned URL for key: %s, expires in: %v", key, expires)
+
 	return presignResult.URL, nil
 }
 
@@ -113,7 +113,7 @@ func (s *CloudflareR2Service) GeneratePresignedGetURL(ctx context.Context, key s
 		return "", fmt.Errorf("failed to generate presigned GET URL: %w", err)
 	}
 
-	log.Printf("Generated presigned GET URL for key: %s, expires in: %v", key, expires)
+
 	return presignResult.URL, nil
 }
 

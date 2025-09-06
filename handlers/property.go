@@ -198,14 +198,7 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ← RESPONSE with pagination info
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"properties": properties,
-		"page":       page,
-		"limit":      limit,
-		"count":      len(properties),
-	})
+	response.WithPayload(w, r, properties)
 }
 
 func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Request) {
