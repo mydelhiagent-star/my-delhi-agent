@@ -13,8 +13,8 @@ type Property struct {
 	Title           string             `json:"title" bson:"title"`
 	Description     string             `json:"description" bson:"description"`
 	Address         string             `json:"address" bson:"address"`
-	MinPrice        float64            `json:"min_price" bson:"min_price"`
-	MaxPrice        float64            `json:"max_price" bson:"max_price"`
+	MinPrice        int64            `json:"min_price" bson:"min_price"`
+	MaxPrice        int64            `json:"max_price" bson:"max_price"`
 	Photos          []string           `json:"photos,omitempty" bson:"photos,omitempty"`
 	Videos          []string           `json:"videos,omitempty" bson:"videos,omitempty"`
 	OwnerName       string             `json:"owner_name,omitempty" bson:"owner_name,omitempty"`
@@ -22,8 +22,15 @@ type Property struct {
 	NearestLandmark string             `json:"nearest_landmark" bson:"nearest_landmark"`
 	IsDeleted       bool               `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
 	Sold            bool               `json:"sold,omitempty" bson:"sold,omitempty"`
-	SoldPrice       float64            `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
-	SoldDate        *time.Time         `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
+	SoldPrice       int64            `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
+	SoldDate        time.Time         `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
+	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
+	Area            float64            `json:"area" bson:"area"`
+	Bedrooms        int                `json:"bedrooms" bson:"bedrooms"`
+	Bathrooms       int                `json:"bathrooms" bson:"bathrooms"`
+	PropertyType    string             `json:"property_type" bson:"property_type"`
+
 }
 
 type PropertyUpdate struct {
@@ -42,4 +49,9 @@ type PropertyUpdate struct {
 	IsDeleted       *bool     `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
 	SoldPrice       *float64  `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
 	SoldDate        *time.Time `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
+	Area            *float64  `json:"area,omitempty" bson:"area,omitempty"`
+	Bedrooms        *int      `json:"bedrooms,omitempty" bson:"bedrooms,omitempty"`
+	Bathrooms       *int      `json:"bathrooms,omitempty" bson:"bathrooms,omitempty"`
+	PropertyType    *string   `json:"property_type,omitempty" bson:"property_type,omitempty"`
+	UpdatedAt       *time.Time `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 }

@@ -9,6 +9,7 @@ import (
 
 	"myapp/constants"
 	"myapp/models"
+	"myapp/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -28,9 +29,9 @@ type DealerService struct {
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
 	// ← HASH password before insertion
-	hash, err := bcrypt.GenerateFromPassword([]byte(dealer.Password), bcrypt.DefaultCost)
+	hash, err := utils.HashPassword(dealer.Password)
 	if err != nil {
-		return fmt.Errorf("failed to hash password")
+		return err
 	}
 	dealer.Password = string(hash)
 

@@ -11,6 +11,7 @@ import (
 	"myapp/response"
 	"myapp/services"
 	"myapp/utils"
+	"myapp/validate"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -28,6 +29,11 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 	var property models.Property
 	if err := json.NewDecoder(r.Body).Decode(&property); err != nil {
 		response.WithError(w, r, "Invalid request body: "+err.Error())
+		return
+	}
+	
+	if err := validate.ValidateProperty(property); err != nil {
+		response.WithValidationError(w, r, err.Error())
 		return
 	}
 
