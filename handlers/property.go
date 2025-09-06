@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"myapp/middlewares"
 	"myapp/models"
@@ -31,7 +32,7 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 		response.WithError(w, r, "Invalid request body: "+err.Error())
 		return
 	}
-	
+
 	if err := validate.ValidateProperty(property); err != nil {
 		response.WithValidationError(w, r, err.Error())
 		return
@@ -50,6 +51,10 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 	}
 
 	property.DealerID = dealerIDObj
+
+	now := time.Now()
+	property.CreatedAt = now
+	
 
 	publicURLPrefix := h.CloudflarePublicURL
 

@@ -25,7 +25,7 @@ type Property struct {
 	SoldPrice       int64            `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
 	SoldDate        time.Time         `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
 	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
+	UpdatedAt       time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 	Area            float64            `json:"area" bson:"area"`
 	Bedrooms        int                `json:"bedrooms" bson:"bedrooms"`
 	Bathrooms       int                `json:"bathrooms" bson:"bathrooms"`
