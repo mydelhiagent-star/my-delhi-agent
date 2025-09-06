@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"myapp/models"
+	"myapp/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,16 +18,30 @@ type PropertyService struct {
 }
 
 func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
-	// ← GENERATE unique property number
-	propertyNumber, err := s.getNextPropertyNumber(ctx)
-	if err != nil {
-		return primitive.NilObjectID, err
-	}
-
-	property.PropertyNumber = propertyNumber
-
-	_, err = s.PropertyCollection.InsertOne(ctx, property)
-	return property.ID, err
+    var resultID primitive.ObjectID
+    
+    err := utils.Retry(ctx, func() error {
+        propertyNumber, err := s.getNextPropertyNumber(ctx)
+        if err != nil {
+            return err
+        }
+        
+        property.PropertyNumber = propertyNumber
+        
+        result, err := s.PropertyCollection.InsertOne(ctx, property)
+        if err != nil {
+            return err
+        }
+        
+        resultID = result.InsertedID.(primitive.ObjectID)
+        return nil
+    })
+    
+    if err != nil {
+        return primitive.NilObjectID, err
+    }
+    
+    return resultID, nil
 }
 
 // ← GENERATE next property number using counter collection
