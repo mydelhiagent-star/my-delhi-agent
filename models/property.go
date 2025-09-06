@@ -17,11 +17,11 @@ type Property struct {
 	MaxPrice        int64              `json:"max_price" bson:"max_price"`
 	Photos          []string           `json:"photos,omitempty" bson:"photos,omitempty"`
 	Videos          []string           `json:"videos,omitempty" bson:"videos,omitempty"`
-	OwnerName       string             `json:"owner_name,omitempty" bson:"owner_name,omitempty"`
-	OwnerPhone      string             `json:"owner_phone,omitempty" bson:"owner_phone,omitempty"`
+	OwnerName       string             `json:"owner_name" bson:"owner_name"`
+	OwnerPhone      string             `json:"owner_phone" bson:"owner_phone"`
 	NearestLandmark string             `json:"nearest_landmark" bson:"nearest_landmark"`
-	IsDeleted       bool               `json:"is_deleted" bson:"is_deleted"`
-	Sold            bool               `json:"sold" bson:"sold"`
+	IsDeleted       bool               `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
+	Sold            bool               `json:"sold,omitempty" bson:"sold,omitempty"`
 	SoldPrice       int64              `json:"sold_price,omitempty" bson:"sold_price,omitempty"`
 	SoldDate        time.Time          `json:"sold_date,omitempty" bson:"sold_date,omitempty"`
 	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
