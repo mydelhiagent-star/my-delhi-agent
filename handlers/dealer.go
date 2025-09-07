@@ -143,7 +143,17 @@ func (h *DealerHandler) UpdateDealer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Service.UpdateDealer(r.Context(), dealerObjID, dealer)
+	// Convert dealer to map for update
+	updateData := map[string]interface{}{
+		"name":           dealer.Name,
+		"phone":          dealer.Phone,
+		"email":          dealer.Email,
+		"office_address": dealer.OfficeAddress,
+		"shop_name":      dealer.ShopName,
+		"location":       dealer.Location,
+		"sub_location":   dealer.SubLocation,
+	}
+	err = h.Service.UpdateDealer(r.Context(), dealerObjID, updateData)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to update dealer: "+err.Error())
 		return

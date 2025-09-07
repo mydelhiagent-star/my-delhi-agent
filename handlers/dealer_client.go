@@ -113,14 +113,20 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 
-	err = h.Service.UpdateDealerClient(r.Context(), objID, updateData)
+	// Convert updateData to map
+	updateMap := map[string]interface{}{
+		"name":   updateData.Name,
+		"phone":  updateData.Phone,
+		"status": updateData.Status,
+		"note":   updateData.Note,
+	}
+	err = h.Service.UpdateDealerClient(r.Context(), objID, updateMap)
 	if err != nil {
 		http.Error(w, "Failed to update client", http.StatusInternalServerError)
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client updated successfully"})
 }
-
 
 func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

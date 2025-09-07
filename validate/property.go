@@ -6,31 +6,31 @@ import (
 )
 
 func ValidateProperty(property models.Property) error {
-	if property.Title == "" || len(property.Title) < 2 {
+	if property.Title == ""{
 		return errors.New("title is required")
 	}
 	if len(property.Title) > 100 {
 		return errors.New("title is too long max 100 words")
 	}
-	if property.Description == "" || len(property.Description) < 2 {
+	if property.Description == ""{
 		return errors.New("description is required")
 	}
-	if len(property.Description) > 1000 {
-		return errors.New("description is too long max 1000 words")
+	if len(property.Description) > 500 {
+		return errors.New("description is too long max 500 words")
 	}
-	if property.Address == "" || len(property.Address) < 2 {
+	if property.Address == ""{
 		return errors.New("address is required")
 	}
 	if len(property.Address) > 100 {
 		return errors.New("address is too long max 100 words")
 	}
-	if property.NearestLandmark == "" || len(property.NearestLandmark) < 2 {
+	if property.NearestLandmark == ""{
 		return errors.New("nearest landmark is required")
 	}
 	if len(property.NearestLandmark) > 50 {
 		return errors.New("nearest landmark is too long max 50 words")
 	}
-	if property.OwnerName == "" || len(property.OwnerName) < 2 {
+	if property.OwnerName == ""{
 		return errors.New("owner name is required")
 	}
 	if len(property.OwnerName) > 50 {

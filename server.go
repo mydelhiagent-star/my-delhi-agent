@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"myapp/config"
-	"myapp/database"
+	"myapp/databases"
 	"myapp/handlers"
 	"myapp/models"
+	"myapp/mongo_repositories"
 	"myapp/response"
 	"myapp/routes"
 	"myapp/services"
@@ -44,25 +45,31 @@ func main() {
 	counterCollection := client.Database(cfg.MongoDB).Collection("counters")
 	dealerClientCollection := client.Database(cfg.MongoDB).Collection("dealer_clients")
 
+	// Initialize repositories
+	dealerRepo := mongo_repository.NewMongoDealerRepository(dealerCollection)
+	leadRepo := mongo_repository.NewMongoLeadRepository(leadCollection, propertyCollection)
+	propertyRepo := mongo_repository.NewMongoPropertyRepository(propertyCollection, counterCollection, redisClient)
+	tokenRepo := mongo_repository.NewMongoTokenRepository(tokenCollection)
+	dealerClientRepo := mongo_repository.NewMongoDealerClientRepository(dealerClientCollection)
+
+	// Initialize services with repositories
 	dealerService := &services.DealerService{
-		DealerCollection: dealerCollection,
-		TokenCollection:  tokenCollection,
-		JWTSecret:        cfg.JWTSecret,
+		DealerRepo: dealerRepo,
+		TokenRepo:  tokenRepo,
+		JWTSecret:  cfg.JWTSecret,
 	}
 	dealerHandler := &handlers.DealerHandler{Service: dealerService}
 
 	leadService := &services.LeadService{
-		LeadCollection:     leadCollection,
-		PropertyCollection: propertyCollection,
+		Repo: leadRepo,
 	}
 
 	propertyService := &services.PropertyService{
-		PropertyCollection: propertyCollection,
-		CounterCollection:  counterCollection,
-		RedisClient:        redisClient,
+		Repo:        propertyRepo,
+		RedisClient: redisClient,
 	}
 	dealerClientService := &services.DealerClientService{
-		DealerClientCollection: dealerClientCollection,
+		Repo: dealerClientRepo,
 	}
 
 	leadHandler := &handlers.LeadHandler{
