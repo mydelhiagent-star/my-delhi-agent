@@ -126,7 +126,7 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
-		limit = 21 // Default limit
+		limit = 12 // Default limit
 	}
 
 	redisKey := fmt.Sprintf("properties_by_dealer:%s:page:%d:limit:%d", dealerID.Hex(), page, limit)
