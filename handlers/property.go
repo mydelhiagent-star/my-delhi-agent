@@ -198,7 +198,7 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 
 	// ← PAGINATION parameters
 	page := 1
-	limit := 20
+	limit := 12
 	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
 		page = p
 	}
