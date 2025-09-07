@@ -169,7 +169,7 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 
 	if s.RedisClient != nil {
 		if data, err := json.Marshal(properties); err == nil {
-			s.RedisClient.Set(ctx, redisKey, data, 15*time.Minute)
+			s.RedisClient.Set(ctx, redisKey, data, 30*time.Minute)
 		}
 	}
 
