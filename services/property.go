@@ -169,7 +169,7 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 
 	if s.RedisClient != nil {
 		if data, err := json.Marshal(properties); err == nil {
-			s.RedisClient.Set(ctx, redisKey, data, 30*time.Minute)
+			s.RedisClient.Set(ctx, redisKey, data, 15*time.Minute)
 		}
 	}
 
@@ -203,7 +203,7 @@ func (s *PropertyService) InvalidateDealerPropertyCache(dealerID primitive.Objec
 	ctx := context.Background()
 	
 	// Invalidate all dealer property pages
-	pattern := fmt.Sprintf("dealer_properties:%s:page:*", dealerID.Hex())
+	pattern := fmt.Sprintf("properties_by_dealer:%s:page:*", dealerID.Hex())
 	keys, err := s.RedisClient.Keys(ctx, pattern).Result()
 	if err == nil {
 		for _, key := range keys {
