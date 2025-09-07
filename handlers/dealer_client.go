@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"myapp/middlewares"
 	"myapp/models"
+	"myapp/response"
 	"myapp/services"
 	"net/http"
 
@@ -17,30 +18,25 @@ type DealerClientHandler struct {
 
 func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.Request) {
 	var dealerClient models.DealerClient
-	err := json.NewDecoder(r.Body).Decode(&dealerClient)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&dealerClient); err != nil {
+		response.WithError(w, r, "Invalid request body")
 		return
 	}
 
-	// Check if phone number already exists for this dealer
-	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), dealerClient.DealerID, dealerClient.PropertyID, dealerClient.Phone)
+	id, err := h.Service.CreateDealerClient(r.Context(), dealerClient)
 	if err != nil {
-		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
-		return
-	}
-	if exists {
-		http.Error(w, "Phone number already exists", http.StatusConflict)
+		if err.Error() == "phone number already exists" {
+			response.WithConflict(w, r, "Phone number already exists")
+		} else {
+			response.WithInternalError(w, r, "Failed to create dealer client: "+err.Error())
+		}
 		return
 	}
 
-	dealerClient.Status = "unmarked"
-	_, err = h.Service.CreateDealerClient(r.Context(), dealerClient)
-	if err != nil {
-		http.Error(w, "Failed to create dealer client", http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(dealerClient)
+	response.WithPayload(w, r, map[string]interface{}{
+		"message": "Dealer client created successfully",
+		"id":      id.Hex(),
+	})
 }
 
 func (h *DealerClientHandler) GetDealerClientByPropertyID(w http.ResponseWriter, r *http.Request) {

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"myapp/models"
 	"myapp/repositories"
 
@@ -19,6 +20,18 @@ func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dea
 }
 
 func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (primitive.ObjectID, error) {
+	// Check if phone number already exists for this dealer
+	exists, err := s.CheckPhoneExistsForDealer(ctx, dealerClient.DealerID, dealerClient.PropertyID, dealerClient.Phone)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	if exists {
+		return primitive.NilObjectID, errors.New("phone number already exists")
+	}
+
+	// Set default status
+	dealerClient.Status = "unmarked"
+
 	return s.Repo.Create(ctx, dealerClient)
 }
 
