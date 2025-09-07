@@ -109,6 +109,7 @@ func (s *CloudflareR2Service) GeneratePresignedGetURL(ctx context.Context, key s
 		opts.Expires = expires
 	})
 
+
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned GET URL: %w", err)
 	}

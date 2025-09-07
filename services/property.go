@@ -2,10 +2,13 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"myapp/models"
 	"myapp/utils"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,6 +18,7 @@ import (
 type PropertyService struct {
 	PropertyCollection *mongo.Collection
 	CounterCollection  *mongo.Collection
+	RedisClient        *redis.Client
 }
 
 func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
@@ -171,4 +175,88 @@ func (s *PropertyService) SearchProperties(ctx context.Context, filter bson.M, p
 	}
 	return properties, nil
 
+}
+
+// Cache methods
+func (s *PropertyService) GetPropertiesByDealerWithCache(ctx context.Context, dealerID primitive.ObjectID, page, limit int) ([]models.Property, error) {
+	// 1. Check Redis cache
+	cacheKey := fmt.Sprintf("dealer_properties:%s:page:%d:limit:%d", dealerID.Hex(), page, limit)
+
+	if s.RedisClient != nil {
+		cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
+			var properties []models.Property
+			if json.Unmarshal([]byte(cached), &properties) == nil {
+				return properties, nil
+			}
+		}
+	}
+
+	// 2. Fetch from MongoDB (cache miss)
+	properties, err := s.GetPropertiesByDealer(ctx, dealerID, page, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Cache the result
+	if s.RedisClient != nil {
+		if data, err := json.Marshal(properties); err == nil {
+			s.RedisClient.Set(ctx, cacheKey, data, 10*time.Minute)
+		}
+	}
+
+	return properties, nil
+}
+
+func (s *PropertyService) GetPropertyByIDWithCache(id primitive.ObjectID) (*models.Property, error) {
+	ctx := context.Background()
+
+	// 1. Check Redis cache
+	cacheKey := fmt.Sprintf("property:%s", id.Hex())
+
+	if s.RedisClient != nil {
+		cached, err := s.RedisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
+			var property models.Property
+			if json.Unmarshal([]byte(cached), &property) == nil {
+				return &property, nil
+			}
+		}
+	}
+
+	// 2. Fetch from MongoDB (cache miss)
+	property, err := s.GetPropertyByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Cache the result
+	if s.RedisClient != nil {
+		if data, err := json.Marshal(property); err == nil {
+			s.RedisClient.Set(ctx, cacheKey, data, 30*time.Minute)
+		}
+	}
+
+	return property, nil
+}
+
+func (s *PropertyService) InvalidatePropertyCache(propertyID primitive.ObjectID, dealerID primitive.ObjectID) {
+	ctx := context.Background()
+
+	if s.RedisClient == nil {
+		return
+	}
+
+	// Invalidate individual property cache
+	propertyKey := fmt.Sprintf("property:%s", propertyID.Hex())
+	s.RedisClient.Del(ctx, propertyKey)
+
+	// Invalidate all dealer property pages
+	pattern := fmt.Sprintf("dealer_properties:%s:page:*", dealerID.Hex())
+	keys, err := s.RedisClient.Keys(ctx, pattern).Result()
+	if err == nil {
+		for _, key := range keys {
+			s.RedisClient.Del(ctx, key)
+		}
+	}
 }

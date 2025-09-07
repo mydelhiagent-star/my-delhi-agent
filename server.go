@@ -22,6 +22,13 @@ func main() {
 	cfg := config.LoadConfig()
 	client := database.ConnectMongo(cfg.MongoURI)
 
+	redisClient, err := database.ConnectRedis(cfg.RedisURI, cfg.RedisUsername, cfg.RedisPassword)
+	if err != nil {
+		log.Printf("⚠️  Redis connection failed: %v", err)
+	} else {
+		log.Printf("✅ Redis connected successfully")
+	}
+
 	r2Service, err := services.NewCloudflareR2Service(cfg.CloudflareAccountID, cfg.CloudflareAccessKeyID, cfg.CloudflareAccessKeySecret, cfg.CloudflareBucketName)
 	if err != nil {
 		log.Printf("⚠️  R2 service failed: %v", err)
@@ -45,13 +52,14 @@ func main() {
 	dealerHandler := &handlers.DealerHandler{Service: dealerService}
 
 	leadService := &services.LeadService{
-		LeadCollection: leadCollection,
+		LeadCollection:     leadCollection,
 		PropertyCollection: propertyCollection,
 	}
 
 	propertyService := &services.PropertyService{
 		PropertyCollection: propertyCollection,
 		CounterCollection:  counterCollection,
+		RedisClient:        redisClient,
 	}
 	dealerClientService := &services.DealerClientService{
 		DealerClientCollection: dealerClientCollection,
