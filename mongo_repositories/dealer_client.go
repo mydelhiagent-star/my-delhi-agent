@@ -89,3 +89,18 @@ func (r *MongoDealerClientRepository) Delete(ctx context.Context, id primitive.O
 	_, err := r.dealerClientCollection.DeleteOne(ctx, bson.M{"_id": id})
 	return err
 }
+
+func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID, phone string) (bool, error) {
+	filter := bson.M{
+		"dealer_id":   dealerID,
+		"property_id": propertyID,
+		"phone":       phone,
+	}
+
+	count, err := r.dealerClientCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}

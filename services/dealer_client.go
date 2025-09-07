@@ -14,9 +14,7 @@ type DealerClientService struct {
 }
 
 func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID, phone string) (bool, error) {
-	// This would need a custom method in the repository
-	// For now, return false
-	return false, nil
+	return s.Repo.CheckPhoneExistsForDealer(ctx, dealerID, propertyID, phone)
 }
 
 func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (primitive.ObjectID, error) {
