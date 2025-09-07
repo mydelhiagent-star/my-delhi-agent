@@ -151,7 +151,7 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 
 	// ← PRODUCTION-READY options
 	opts := options.Find().
-		SetSort(bson.M{"_id": -1}). // Newest first
+		SetSort(bson.M{"created_at": -1}). // Newest first
 		SetSkip(int64(skip)).       // Pagination
 		SetLimit(int64(limit)).     // Memory protection
 		SetBatchSize(100)           // Network optimization
