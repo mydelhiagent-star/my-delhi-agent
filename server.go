@@ -70,7 +70,7 @@ func main() {
 		PropertyService: propertyService,
 	}
 
-	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL}
+	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL, DealerService: dealerService}
 
 	dealerClientHandler := &handlers.DealerClientHandler{Service: dealerClientService}
 

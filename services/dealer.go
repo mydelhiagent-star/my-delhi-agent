@@ -371,3 +371,12 @@ func (s *DealerService) ResetPasswordDealer(ctx context.Context, dealerID primit
 	_, err = s.DealerCollection.UpdateByID(ctx, dealerID, update)
 	return err
 }
+
+
+func (s *DealerService) DealerExists(ctx context.Context, dealerID primitive.ObjectID) (bool, error) {
+	count, err := s.DealerCollection.CountDocuments(ctx, bson.M{"_id": dealerID})
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

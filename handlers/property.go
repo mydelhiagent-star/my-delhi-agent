@@ -22,6 +22,7 @@ import (
 
 type PropertyHandler struct {
 	Service             *services.PropertyService
+	DealerService       *services.DealerService
 	CloudflarePublicURL string
 }
 
@@ -47,6 +48,16 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 	dealerIDObj, err := primitive.ObjectIDFromHex(dealerIDStr)
 	if err != nil {
 		response.WithValidationError(w, r, "Invalid dealer ID")
+		return
+	}
+
+	dealerExists, err := h.DealerService.DealerExists(r.Context(), dealerIDObj)
+	if err != nil {
+		response.WithInternalError(w, r, "Failed to validate dealer: "+err.Error())
+		return
+	}
+	if !dealerExists {
+		response.WithNotFound(w, r, "Dealer not found")
 		return
 	}
 
