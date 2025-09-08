@@ -19,4 +19,5 @@ type PropertyRepository interface {
 	Update(ctx context.Context, id primitive.ObjectID, updates models.PropertyUpdate) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	GetNextPropertyNumber(ctx context.Context) (int64, error)
+		
 }

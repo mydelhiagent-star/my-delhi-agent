@@ -326,3 +326,26 @@ func (h *PropertyHandler) SearchProperties(w http.ResponseWriter, r *http.Reques
 		"properties": properties,
 	})
 }
+
+func (h *PropertyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	propertyID := vars["id"]
+	if propertyID == "" {
+		http.Error(w, "Missing property ID", http.StatusBadRequest)
+		return
+	}
+
+	objID, err := primitive.ObjectIDFromHex(propertyID)
+	if err != nil {
+		http.Error(w, "Invalid property ID", http.StatusBadRequest)
+		return
+	}
+
+	property, err := h.Service.GetByID(r.Context(), objID)
+	if err != nil {
+		http.Error(w, "Failed to fetch property", http.StatusInternalServerError)
+		return
+	}
+
+	response.WithPayload(w, r, property)
+}

@@ -119,3 +119,7 @@ func (s *PropertyService) InvalidateDealerPropertyCache(dealerID primitive.Objec
 		}
 	}
 }
+
+func (s *PropertyService) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Property, error) {
+	return s.Repo.GetByID(ctx, id)
+}

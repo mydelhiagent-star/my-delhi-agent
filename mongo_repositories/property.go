@@ -38,7 +38,7 @@ func (r *MongoPropertyRepository) Create(ctx context.Context, property models.Pr
 
 func (r *MongoPropertyRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Property, error) {
 	var property models.Property
-	err := r.propertyCollection.FindOne(ctx, bson.M{"_id": id, "is_deleted": false}).Decode(&property)
+	err := r.propertyCollection.FindOne(ctx, bson.M{"_id": id, "is_deleted": bson.M{"$ne": true}}).Decode(&property)
 	if err != nil {
 		return nil, err
 	}
@@ -166,3 +166,4 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 
 	return result.Value, nil
 }
+

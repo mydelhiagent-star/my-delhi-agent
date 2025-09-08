@@ -15,7 +15,7 @@ func RegisterPropertyRoutes(r *mux.Router, h *handlers.PropertyHandler, jwtSecre
 	dealerPropertyRouter := propertyRouter.PathPrefix("/dealer").Subrouter()
 	dealerPropertyRouter.Use(middlewares.RequireRole("dealer"))
 	dealerPropertyRouter.HandleFunc("/", h.CreateProperty).Methods("POST")
-	dealerPropertyRouter.HandleFunc("/{id}", h.GetProperty).Methods("GET")
+	
 	dealerPropertyRouter.HandleFunc("/{id}", h.UpdateProperty).Methods("PUT")
 	dealerPropertyRouter.HandleFunc("/{id}", h.DeleteProperty).Methods("DELETE")
 
@@ -24,6 +24,7 @@ func RegisterPropertyRoutes(r *mux.Router, h *handlers.PropertyHandler, jwtSecre
 	adminRouter.HandleFunc("/", h.GetAllProperties).Methods("GET")
 	adminRouter.HandleFunc("/search", h.SearchProperties).Methods("GET")
 
+	propertyRouter.HandleFunc("/{id}", h.GetByID).Methods("GET")
 	propertyRouter.HandleFunc("/", h.GetPropertiesByDealer).Methods("GET")
 	propertyRouter.HandleFunc("/number/{number}", h.GetPropertyByNumber).Methods("GET")
 	
