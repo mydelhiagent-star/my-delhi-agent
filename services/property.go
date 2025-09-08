@@ -58,11 +58,45 @@ func (s *PropertyService) GetPropertyByID(id primitive.ObjectID) (*models.Proper
 }
 
 func (s *PropertyService) UpdateProperty(id primitive.ObjectID, updates models.PropertyUpdate) error {
-	return s.Repo.Update(context.Background(), id, updates)
+	// Get property first to find dealer ID for cache invalidation
+	property, err := s.Repo.GetByID(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	// Update the property
+	err = s.Repo.Update(context.Background(), id, updates)
+	if err != nil {
+		return err
+	}
+
+	// Invalidate dealer's property cache
+	if s.RedisClient != nil {
+		s.InvalidateDealerPropertyCache(property.DealerID)
+	}
+
+	return nil
 }
 
 func (s *PropertyService) DeleteProperty(id primitive.ObjectID) error {
-	return s.Repo.Delete(context.Background(), id)
+	// Get property first to find dealer ID for cache invalidation
+	property, err := s.Repo.GetByID(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	// Delete the property
+	err = s.Repo.Delete(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	// Invalidate dealer's property cache
+	if s.RedisClient != nil {
+		s.InvalidateDealerPropertyCache(property.DealerID)
+	}
+
+	return nil
 }
 
 func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Property, error) {

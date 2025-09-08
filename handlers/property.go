@@ -147,11 +147,11 @@ func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := h.Service.DeleteProperty(objID); err != nil {
-		http.Error(w, "Failed to delete property", http.StatusInternalServerError)
+		response.WithInternalError(w, r, "Failed to delete property")
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Property deleted successfully"})
+	response.WithMessage(w, r, "Property deleted successfully")
 }
 
 func (h *PropertyHandler) GetAllProperties(w http.ResponseWriter, r *http.Request) {
