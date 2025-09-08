@@ -2,12 +2,14 @@ package mongo_repository
 
 import (
 	"context"
+	"myapp/constants"
 	"myapp/models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoDealerRepository struct {
@@ -108,7 +110,52 @@ func (r *MongoDealerRepository) GetByLocation(ctx context.Context, subLocation s
 }
 
 func (r *MongoDealerRepository) GetLocationsWithSubLocations(ctx context.Context) ([]models.LocationWithSubLocations, error) {
-	// This would need a complex aggregation pipeline
-	// For now, return empty slice
-	return []models.LocationWithSubLocations{}, nil
+	cursor, err := r.dealerCollection.Find(
+		ctx,
+		bson.M{"location": bson.M{"$in": constants.Locations}},
+		options.Find().SetProjection(bson.M{
+			"location":     1,
+			"sub_location": 1,
+			"_id":          0, // exclude _id if not needed
+		}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	// Map: location -> set of sublocations
+	locationMap := make(map[string]map[string]struct{})
+
+	for cursor.Next(ctx) {
+		var dealer models.Dealer
+		if err := cursor.Decode(&dealer); err != nil {
+			return nil, err
+		}
+
+		if dealer.Location != "" && dealer.SubLocation != "" {
+			if _, ok := locationMap[dealer.Location]; !ok {
+				locationMap[dealer.Location] = make(map[string]struct{})
+			}
+			locationMap[dealer.Location][dealer.SubLocation] = struct{}{}
+		}
+	}
+
+	// Prepare result
+	result := make([]models.LocationWithSubLocations, 0, len(constants.Locations))
+	for _, loc := range constants.Locations {
+		subLocs := make([]string, 0)
+		if subs, ok := locationMap[loc]; ok {
+			for sub := range subs {
+				subLocs = append(subLocs, sub)
+			}
+		}
+		result = append(result, models.LocationWithSubLocations{
+			Location:    loc,
+			SubLocation: subLocs,
+		})
+	}
+
+	return result, nil
+
 }
