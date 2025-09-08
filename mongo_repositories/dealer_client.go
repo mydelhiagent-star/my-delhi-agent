@@ -104,3 +104,9 @@ func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Cont
 
 	return count > 0, nil
 }
+
+func (r *MongoDealerClientRepository) UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error {
+	update := bson.M{"$set": bson.M{"status": status}}
+	_, err := r.dealerClientCollection.UpdateByID(ctx, id, update)
+	return err
+}

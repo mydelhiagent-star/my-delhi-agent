@@ -17,4 +17,5 @@ type DealerClientRepository interface {
 	Update(ctx context.Context, id primitive.ObjectID, updates map[string]interface{}) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID, phone string) (bool, error)
+	UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error
 }

@@ -62,7 +62,7 @@ func (h *DealerClientHandler) GetDealerClientByPropertyID(w http.ResponseWriter,
 		http.Error(w, "Failed to fetch dealer clients", http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(dealerClients)
+	response.WithPayload(w, r, dealerClients)
 }
 
 func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.Request) {
@@ -142,4 +142,30 @@ func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client deleted successfully"})
+}
+
+func (h *DealerClientHandler) UpdateDealerClientStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	dealerClientID := vars["dealerClientID"]
+	if dealerClientID == "" {
+		http.Error(w, "Missing dealer client ID", http.StatusBadRequest)
+		return
+	}
+	objID, err := primitive.ObjectIDFromHex(dealerClientID)
+	if err != nil {
+		http.Error(w, "Invalid dealer client ID", http.StatusBadRequest)
+		return
+	}
+	var updateData struct {
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	err = h.Service.UpdateDealerClientStatus(r.Context(), objID, updateData.Status)
+	if err != nil {
+		http.Error(w, "Failed to update dealer client status", http.StatusInternalServerError)
+		return
+	}
 }

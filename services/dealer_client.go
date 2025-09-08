@@ -56,3 +56,7 @@ func (s *DealerClientService) DeleteDealerClient(ctx context.Context, id primiti
 func (s *DealerClientService) GetDealerClientByID(ctx context.Context, id primitive.ObjectID) (*models.DealerClient, error) {
 	return s.Repo.GetByID(ctx, id)
 }
+
+func (s *DealerClientService) UpdateDealerClientStatus(ctx context.Context, id primitive.ObjectID, status string) error {
+	return s.Repo.UpdateStatus(ctx, id, status)
+}
