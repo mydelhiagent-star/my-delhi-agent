@@ -82,7 +82,7 @@ func (h *DealerHandler) GetLocationsWithSubLocations(w http.ResponseWriter, r *h
 		response.Error(w, http.StatusInternalServerError, "Failed to fetch locations sublocations: "+err.Error())
 	}
 
-	response.JSON(w, http.StatusOK, result)
+	response.WithPayload(w, r, result)
 }
 
 func (h *DealerHandler) GetDealerWithProperties(w http.ResponseWriter, r *http.Request) {
