@@ -1,9 +1,11 @@
-package mongo_repository
+package mongo_repositories
 
 import (
 	"context"
 	"fmt"
-	"myapp/mongo_models"
+	"myapp/converters"
+	"myapp/models"
+	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
 	"time"
 
@@ -18,6 +20,7 @@ type MongoPropertyRepository struct {
 	propertyCollection *mongo.Collection
 	counterCollection  *mongo.Collection
 	redisClient        *redis.Client
+	
 }
 
 func NewMongoPropertyRepository(propertyCollection, counterCollection *mongo.Collection, redisClient *redis.Client) repositories.PropertyRepository {
@@ -28,56 +31,60 @@ func NewMongoPropertyRepository(propertyCollection, counterCollection *mongo.Col
 	}
 }
 
-func (r *MongoPropertyRepository) Create(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
-	result, err := r.propertyCollection.InsertOne(ctx, property)
+func (r *MongoPropertyRepository) Create(ctx context.Context, property models.Property) (string, error) {
+	mongoProperty, err := converters.ToMongoProperty(property)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
-	return result.InsertedID.(primitive.ObjectID), nil
+
+	result, err := r.propertyCollection.InsertOne(ctx, mongoProperty)
+	if err != nil {
+		return "", err
+	}
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (r *MongoPropertyRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Property, error) {
-	var property models.Property
-	err := r.propertyCollection.FindOne(ctx, bson.M{"_id": id, "is_deleted": bson.M{"$ne": true}}).Decode(&property)
+func (r *MongoPropertyRepository) GetByID(ctx context.Context, id string) (models.Property, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return models.Property{}, err
 	}
-	return &property, nil
+
+	var mongoProperty mongoModels.Property
+	err = r.propertyCollection.FindOne(ctx, bson.M{"_id": objectID, "is_deleted": bson.M{"$ne": true}}).Decode(&mongoProperty)
+	if err != nil {
+		return models.Property{}, err
+	}
+
+	return converters.ToDomainProperty(mongoProperty), nil
 }
 
-func (r *MongoPropertyRepository) GetByNumber(ctx context.Context, propertyNumber int64) (*models.Property, error) {
-	var property models.Property
-	err := r.propertyCollection.FindOne(ctx, bson.M{"property_number": propertyNumber, "is_deleted": false}).Decode(&property)
-	if err != nil {
-		return nil, err
-	}
-	return &property, nil
-}
-
-func (r *MongoPropertyRepository) GetByDealer(ctx context.Context, dealerID primitive.ObjectID, page, limit int) ([]models.Property, error) {
+func (r *MongoPropertyRepository) GetByDealer(ctx context.Context, dealerID string, page, limit int) ([]models.Property, error) {
 	// Validate inputs
 	if page < 1 {
 		page = 1
 	}
 	if limit < 1 || limit > 100 {
-		limit = 20 // Default limit
+		limit = 20
+	}
+
+	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
+	if err != nil {
+		return nil, err
 	}
 
 	filter := bson.M{
-		"dealer_id":  dealerID,
+		"dealer_id":  dealerObjectID,
 		"is_deleted": bson.M{"$ne": true},
 		"sold":       bson.M{"$ne": true},
 	}
 
-	// Calculate skip for pagination
 	skip := (page - 1) * limit
-
-	// Production-ready options
 	opts := options.Find().
-		SetSort(bson.M{"created_at": -1}). // Newest first
-		SetSkip(int64(skip)).              // Pagination
-		SetLimit(int64(limit)).            // Memory protection
-		SetBatchSize(100)                  // Network optimization
+		SetSort(bson.M{"created_at": -1}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit)).
+		SetBatchSize(100)
 
 	cursor, err := r.propertyCollection.Find(ctx, filter, opts)
 	if err != nil {
@@ -85,12 +92,12 @@ func (r *MongoPropertyRepository) GetByDealer(ctx context.Context, dealerID prim
 	}
 	defer cursor.Close(ctx)
 
-	var properties []models.Property
-	if err := cursor.All(ctx, &properties); err != nil {
+	var mongoProperties []mongoModels.Property
+	if err := cursor.All(ctx, &mongoProperties); err != nil {
 		return nil, fmt.Errorf("failed to decode properties: %w", err)
 	}
 
-	return properties, nil
+	return converters.ToDomainPropertySlice(mongoProperties), nil
 }
 
 func (r *MongoPropertyRepository) GetAll(ctx context.Context) ([]models.Property, error) {
@@ -100,44 +107,52 @@ func (r *MongoPropertyRepository) GetAll(ctx context.Context) ([]models.Property
 	}
 	defer cursor.Close(ctx)
 
-	var properties []models.Property
-	if err := cursor.All(ctx, &properties); err != nil {
+	var mongoProperties []mongoModels.Property
+	if err := cursor.All(ctx, &mongoProperties); err != nil {
 		return nil, err
 	}
-	return properties, nil
+
+	return converters.ToDomainPropertySlice(mongoProperties), nil
 }
 
-func (r *MongoPropertyRepository) Search(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Property, error) {
-	skip := (page - 1) * limit
-
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: filter}},
-		{{Key: "$skip", Value: int64(skip)}},
-		{{Key: "$limit", Value: int64(limit)}},
-	}
-
-	cursor, err := r.propertyCollection.Aggregate(ctx, pipeline)
+func (r *MongoPropertyRepository) Update(ctx context.Context, id string, updates models.PropertyUpdate) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer cursor.Close(ctx)
 
-	var properties []models.Property
-	if err := cursor.All(ctx, &properties); err != nil {
-		return nil, err
+	// Convert PropertyUpdate to bson.M
+	updateDoc := bson.M{}
+	if updates.Title != nil {
+		updateDoc["title"] = *updates.Title
 	}
-	return properties, nil
-}
+	if updates.Address != nil {
+		updateDoc["address"] = *updates.Address
+	}
+	if updates.MinPrice != nil {
+		updateDoc["min_price"] = *updates.MinPrice
+	}
+	if updates.MaxPrice != nil {
+		updateDoc["max_price"] = *updates.MaxPrice
+	}
+	if updates.Sold != nil {
+		updateDoc["sold"] = *updates.Sold
+	}
+	// Add other fields as needed...
 
-func (r *MongoPropertyRepository) Update(ctx context.Context, id primitive.ObjectID, updates models.PropertyUpdate) error {
-	update := bson.M{"$set": updates}
-	_, err := r.propertyCollection.UpdateByID(ctx, id, update)
+	update := bson.M{"$set": updateDoc}
+	_, err = r.propertyCollection.UpdateByID(ctx, objectID, update)
 	return err
 }
 
-func (r *MongoPropertyRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
+func (r *MongoPropertyRepository) Delete(ctx context.Context, id string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
 	now := time.Now()
-	_, err := r.propertyCollection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{
+	_, err = r.propertyCollection.UpdateOne(ctx, bson.M{"_id": objectID}, bson.M{"$set": bson.M{
 		"is_deleted": true,
 		"updated_at": now,
 	}})
@@ -145,7 +160,6 @@ func (r *MongoPropertyRepository) Delete(ctx context.Context, id primitive.Objec
 }
 
 func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (int64, error) {
-	// Use findOneAndUpdate to atomically increment counter
 	var result struct {
 		Value int64 `bson:"value"`
 	}
@@ -167,3 +181,41 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 	return result.Value, nil
 }
 
+func (r *MongoPropertyRepository) GetByNumber(ctx context.Context, propertyNumber int64) (models.Property, error) {
+	var mongoProperty mongoModels.Property
+	err := r.propertyCollection.FindOne(ctx, bson.M{"property_number": propertyNumber, "is_deleted": false}).Decode(&mongoProperty)
+	if err != nil {
+		return models.Property{}, err
+	}
+
+	return converters.ToDomainProperty(mongoProperty), nil
+}
+
+func (r *MongoPropertyRepository) Search(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Property, error) {
+	skip := (page - 1) * limit
+
+	// Convert map[string]interface{} to bson.M
+	bsonFilter := bson.M{}
+	for k, v := range filter {
+		bsonFilter[k] = v
+	}
+
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bsonFilter}},
+		{{Key: "$skip", Value: int64(skip)}},
+		{{Key: "$limit", Value: int64(limit)}},
+	}
+
+	cursor, err := r.propertyCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var mongoProperties []mongoModels.Property
+	if err := cursor.All(ctx, &mongoProperties); err != nil {
+		return nil, err
+	}
+
+	return converters.ToDomainPropertySlice(mongoProperties), nil
+}

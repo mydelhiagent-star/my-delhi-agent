@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"myapp/middlewares"
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/response"
 	"myapp/services"
 	"net/http"
@@ -40,7 +40,7 @@ func (h *LeadHandler) CreateLead(w http.ResponseWriter, r *http.Request) {
 
 	response.WithPayload(w, r, map[string]interface{}{
 		"message": "Lead created successfully",
-		"lead_id": id.Hex(),
+		"lead_id": id,
 	})
 }
 
@@ -57,7 +57,7 @@ func (h *LeadHandler) GetLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lead, err := h.Service.GetLeadByID(r.Context(), objID)
+	lead, err := h.Service.GetLeadByID(r.Context(), objID.Hex())
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			response.WithNotFound(w, r, "Lead not found")
@@ -91,7 +91,7 @@ func (h *LeadHandler) GetAllLeadsByDealerID(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	leads, err := h.Service.GetAllLeadsByDealerID(r.Context(), objID)
+	leads, err := h.Service.GetAllLeadsByDealerID(r.Context(), objID.Hex())
 
 	if err != nil {
 		response.WithInternalError(w, r, "Failed to fetch leads: "+err.Error())
@@ -127,7 +127,7 @@ func (h *LeadHandler) UpdateLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Service.UpdateLead(r.Context(), objID, updateData)
+	err = h.Service.UpdateLead(r.Context(), objID.Hex(), updateData)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			response.WithNotFound(w, r, "Lead not found")
@@ -161,12 +161,12 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 	}
 
 	// Validate property interest
-	if propertyInterest.PropertyID.IsZero() || propertyInterest.DealerID.IsZero() {
+	if propertyInterest.PropertyID == "" || propertyInterest.DealerID == "" {
 		http.Error(w, "Property ID and dealer ID are required", http.StatusBadRequest)
 		return
 	}
 
-	err = h.Service.AddPropertyInterest(r.Context(), objID, propertyInterest)
+	err = h.Service.AddPropertyInterest(r.Context(), objID.Hex(), propertyInterest)
 	if err != nil {
 		if err.Error() == "property already added to this lead" {
 			json.NewEncoder(w).Encode(map[string]string{
@@ -398,7 +398,7 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	properties, err := h.Service.GetLeadPropertyDetails(r.Context(), objID)
+	properties, err := h.Service.GetLeadPropertyDetails(r.Context(), objID.Hex())
 
 	if err != nil {
 		http.Error(w, "Failed to fetch lead with details", http.StatusInternalServerError)
@@ -406,7 +406,7 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 	}
 
 	if status := r.URL.Query().Get("status"); status != "" {
-		filteredByStatus := make([]bson.M, 0)
+		filteredByStatus := make([]map[string]interface{}, 0)
 		for _, property := range properties {
 			if propStatus, ok := property["status"].(string); ok {
 				if propStatus == status {
@@ -421,7 +421,7 @@ func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Requ
 	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
 
 	if userRole == "dealer" {
-		filteredProperties := make([]bson.M, 0) // ← Change to []bson.M
+		filteredProperties := make([]map[string]interface{}, 0) // ← Change to []bson.M
 		dealerID, err := primitive.ObjectIDFromHex(userID)
 		if err != nil {
 			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
@@ -472,7 +472,7 @@ func (h *LeadHandler) DeleteLead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Service.DeleteLead(r.Context(), objID)
+	err = h.Service.DeleteLead(r.Context(), objID.Hex())
 
 	if err != nil {
 		http.Error(w, "Failed to delete lead", http.StatusInternalServerError)
@@ -536,7 +536,7 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 	}
 
 	// ← CALL the specific service method
-	err = h.Service.UpdatePropertyInterest(r.Context(), leadObjID, propertyObjID, updateData.Status, updateData.Note)
+	err = h.Service.UpdatePropertyInterest(r.Context(), leadObjID.Hex(), propertyObjID.Hex(), updateData.Status, updateData.Note)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			http.Error(w, "Property interest not found for this lead", http.StatusNotFound)
@@ -547,7 +547,7 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 	}
 	if updateData.Status == "converted" {
 		soldDate := time.Now()
-		err = h.PropertyService.UpdateProperty(propertyObjID, models.PropertyUpdate{
+		err = h.PropertyService.UpdateProperty(propertyObjID.Hex(), models.PropertyUpdate{
 			Sold:      &[]bool{true}[0],
 			SoldPrice: &updateData.SoldPrice,
 			UpdatedAt: &soldDate,
@@ -584,7 +584,7 @@ func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	leads, err := h.Service.GetDealerLeads(r.Context(), dealerID)
+	leads, err := h.Service.GetDealerLeads(r.Context(), dealerID.Hex())
 	if err != nil {
 		http.Error(w, "Failed to fetch dealer leads", http.StatusInternalServerError)
 		return

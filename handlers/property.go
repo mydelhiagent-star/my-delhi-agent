@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"myapp/middlewares"
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/response"
 	"myapp/services"
 	"myapp/utils"
@@ -51,7 +51,7 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	dealerExists, err := h.DealerService.DealerExists(r.Context(), dealerIDObj)
+	dealerExists, err := h.DealerService.DealerExists(r.Context(), dealerIDObj.Hex())
 	if err != nil {
 		response.WithInternalError(w, r, "Failed to validate dealer: "+err.Error())
 		return
@@ -61,7 +61,7 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	property.DealerID = dealerIDObj
+	property.DealerID = dealerIDObj.Hex()
 
 	now := time.Now()
 	property.CreatedAt = now
@@ -88,7 +88,7 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 
 	response.WithPayload(w, r, map[string]string{
 		"message":    "Property created successfully",
-		"propertyId": id.Hex(),
+		"propertyId": id,
 	})
 }
 
@@ -101,7 +101,7 @@ func (h *PropertyHandler) GetProperty(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	property, err := h.Service.GetPropertyByID(objID)
+	property, err := h.Service.GetPropertyByID(objID.Hex())
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			response.WithNotFound(w, r, "Property not found")
@@ -129,7 +129,7 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.Service.UpdateProperty(objID, updates); err != nil {
+	if err := h.Service.UpdateProperty(objID.Hex(), updates); err != nil {
 		http.Error(w, "Failed to update property", http.StatusInternalServerError)
 		return
 	}
@@ -146,7 +146,7 @@ func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.Service.DeleteProperty(objID); err != nil {
+	if err := h.Service.DeleteProperty(objID.Hex()); err != nil {
 		response.WithInternalError(w, r, "Failed to delete property")
 		return
 	}
@@ -207,7 +207,7 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 	}
 
 	// ← FETCH properties with pagination
-	properties, err := h.Service.GetPropertiesByDealer(r.Context(), dealerID, page, limit)
+	properties, err := h.Service.GetPropertiesByDealer(r.Context(), dealerID.Hex(), page, limit)
 	if err != nil {
 		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -341,7 +341,7 @@ func (h *PropertyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	property, err := h.Service.GetByID(r.Context(), objID)
+	property, err := h.Service.GetByID(r.Context(), objID.Hex())
 	if err != nil {
 		http.Error(w, "Failed to fetch property", http.StatusInternalServerError)
 		return

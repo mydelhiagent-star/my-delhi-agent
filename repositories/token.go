@@ -2,13 +2,13 @@ package repositories
 
 import (
 	"context"
-	"myapp/mongo_models"
+	"myapp/models"
 )
 
-// TokenRepository defines the interface for token data operations
+// TokenRepository defines the interface for token data operations using database-agnostic models
 type TokenRepository interface {
 	Create(ctx context.Context, token models.Token) error
-	GetByToken(ctx context.Context, token string) (*models.Token, error)
+	GetByToken(ctx context.Context, token string) (models.Token, error)
 	Delete(ctx context.Context, token string) error
 	DeleteByUserID(ctx context.Context, userID string) error
 }

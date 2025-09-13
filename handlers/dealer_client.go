@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"myapp/middlewares"
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/response"
 	"myapp/services"
 	"net/http"
@@ -35,7 +35,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 
 	response.WithPayload(w, r, map[string]interface{}{
 		"message": "Dealer client created successfully",
-		"id":      id.Hex(),
+		"id":      id,
 	})
 }
 
@@ -57,7 +57,7 @@ func (h *DealerClientHandler) GetDealerClientByPropertyID(w http.ResponseWriter,
 		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 		return
 	}
-	dealerClients, err := h.Service.GetDealerClientByPropertyID(r.Context(), dealerIDObj, objID)
+	dealerClients, err := h.Service.GetDealerClientByPropertyID(r.Context(), dealerIDObj.Hex(), objID.Hex())
 	if err != nil {
 		http.Error(w, "Failed to fetch dealer clients", http.StatusInternalServerError)
 		return
@@ -92,7 +92,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	}
 
 	// Get current dealer client to fetch property_id and dealer_id
-	currentClient, err := h.Service.GetDealerClientByID(r.Context(), objID)
+	currentClient, err := h.Service.GetDealerClientByID(r.Context(), objID.Hex())
 	if err != nil {
 		http.Error(w, "Failed to fetch dealer client", http.StatusInternalServerError)
 		return
@@ -116,7 +116,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		"status": updateData.Status,
 		"note":   updateData.Note,
 	}
-	err = h.Service.UpdateDealerClient(r.Context(), objID, updateMap)
+	err = h.Service.UpdateDealerClient(r.Context(), objID.Hex(), updateMap)
 	if err != nil {
 		http.Error(w, "Failed to update client", http.StatusInternalServerError)
 		return
@@ -136,7 +136,7 @@ func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.
 		http.Error(w, "Invalid dealer client ID", http.StatusBadRequest)
 		return
 	}
-	err = h.Service.DeleteDealerClient(r.Context(), objID)
+	err = h.Service.DeleteDealerClient(r.Context(), objID.Hex())
 	if err != nil {
 		http.Error(w, "Failed to delete dealer client", http.StatusInternalServerError)
 		return
@@ -163,7 +163,7 @@ func (h *DealerClientHandler) UpdateDealerClientStatus(w http.ResponseWriter, r 
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	err = h.Service.UpdateDealerClientStatus(r.Context(), objID, updateData.Status)
+	err = h.Service.UpdateDealerClientStatus(r.Context(), objID.Hex(), updateData.Status)
 	if err != nil {
 		http.Error(w, "Failed to update dealer client status", http.StatusInternalServerError)
 		return

@@ -50,4 +50,5 @@ type PropertyUpdate struct {
 	Bedrooms        *int       `json:"bedrooms,omitempty"`
 	Bathrooms       *int       `json:"bathrooms,omitempty"`
 	PropertyType    *string    `json:"property_type,omitempty"`
+	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
 }

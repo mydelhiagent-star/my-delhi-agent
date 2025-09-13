@@ -1,9 +1,11 @@
-package mongo_repository
+package mongo_repositories
 
 import (
 	"context"
 	"myapp/constants"
-	"myapp/mongo_models"
+	"myapp/converters"
+	"myapp/models"
+	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,39 +24,52 @@ func NewMongoDealerRepository(dealerCollection *mongo.Collection) repositories.D
 	}
 }
 
-func (r *MongoDealerRepository) Create(ctx context.Context, dealer models.Dealer) (primitive.ObjectID, error) {
-	result, err := r.dealerCollection.InsertOne(ctx, dealer)
+func (r *MongoDealerRepository) Create(ctx context.Context, dealer models.Dealer) (string, error) {
+	mongoDealer, err := converters.ToMongoDealer(dealer)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
-	return result.InsertedID.(primitive.ObjectID), nil
+
+	result, err := r.dealerCollection.InsertOne(ctx, mongoDealer)
+	if err != nil {
+		return "", err
+	}
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (r *MongoDealerRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Dealer, error) {
-	var dealer models.Dealer
-	err := r.dealerCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&dealer)
+func (r *MongoDealerRepository) GetByID(ctx context.Context, id string) (models.Dealer, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return models.Dealer{}, err
 	}
-	return &dealer, nil
+
+	var mongoDealer mongoModels.Dealer
+	err = r.dealerCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&mongoDealer)
+	if err != nil {
+		return models.Dealer{}, err
+	}
+
+	return converters.ToDomainDealer(mongoDealer), nil
 }
 
-func (r *MongoDealerRepository) GetByPhone(ctx context.Context, phone string) (*models.Dealer, error) {
-	var dealer models.Dealer
-	err := r.dealerCollection.FindOne(ctx, bson.M{"phone": phone}).Decode(&dealer)
+func (r *MongoDealerRepository) GetByPhone(ctx context.Context, phone string) (models.Dealer, error) {
+	var mongoDealer mongoModels.Dealer
+	err := r.dealerCollection.FindOne(ctx, bson.M{"phone": phone}).Decode(&mongoDealer)
 	if err != nil {
-		return nil, err
+		return models.Dealer{}, err
 	}
-	return &dealer, nil
+
+	return converters.ToDomainDealer(mongoDealer), nil
 }
 
-func (r *MongoDealerRepository) GetByEmail(ctx context.Context, email string) (*models.Dealer, error) {
-	var dealer models.Dealer
-	err := r.dealerCollection.FindOne(ctx, bson.M{"email": email}).Decode(&dealer)
+func (r *MongoDealerRepository) GetByEmail(ctx context.Context, email string) (models.Dealer, error) {
+	var mongoDealer mongoModels.Dealer
+	err := r.dealerCollection.FindOne(ctx, bson.M{"email": email}).Decode(&mongoDealer)
 	if err != nil {
-		return nil, err
+		return models.Dealer{}, err
 	}
-	return &dealer, nil
+
+	return converters.ToDomainDealer(mongoDealer), nil
 }
 
 func (r *MongoDealerRepository) GetAll(ctx context.Context) ([]models.Dealer, error) {
@@ -64,26 +79,42 @@ func (r *MongoDealerRepository) GetAll(ctx context.Context) ([]models.Dealer, er
 	}
 	defer cursor.Close(ctx)
 
-	var dealers []models.Dealer
-	if err := cursor.All(ctx, &dealers); err != nil {
+	var mongoDealers []mongoModels.Dealer
+	if err := cursor.All(ctx, &mongoDealers); err != nil {
 		return nil, err
 	}
-	return dealers, nil
+
+	return converters.ToDomainDealerSlice(mongoDealers), nil
 }
 
-func (r *MongoDealerRepository) Update(ctx context.Context, id primitive.ObjectID, updates map[string]interface{}) error {
+func (r *MongoDealerRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
 	update := bson.M{"$set": updates}
-	_, err := r.dealerCollection.UpdateByID(ctx, id, update)
+	_, err = r.dealerCollection.UpdateByID(ctx, objectID, update)
 	return err
 }
 
-func (r *MongoDealerRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
-	_, err := r.dealerCollection.DeleteOne(ctx, bson.M{"_id": id})
+func (r *MongoDealerRepository) Delete(ctx context.Context, id string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.dealerCollection.DeleteOne(ctx, bson.M{"_id": objectID})
 	return err
 }
 
-func (r *MongoDealerRepository) Exists(ctx context.Context, id primitive.ObjectID) (bool, error) {
-	count, err := r.dealerCollection.CountDocuments(ctx, bson.M{"_id": id})
+func (r *MongoDealerRepository) Exists(ctx context.Context, id string) (bool, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := r.dealerCollection.CountDocuments(ctx, bson.M{"_id": objectID})
 	if err != nil {
 		return false, err
 	}
@@ -101,12 +132,12 @@ func (r *MongoDealerRepository) GetByLocation(ctx context.Context, subLocation s
 	}
 	defer cursor.Close(ctx)
 
-	var dealers []models.Dealer
-	if err := cursor.All(ctx, &dealers); err != nil {
+	var mongoDealers []mongoModels.Dealer
+	if err := cursor.All(ctx, &mongoDealers); err != nil {
 		return nil, err
 	}
 
-	return dealers, nil
+	return converters.ToDomainDealerSlice(mongoDealers), nil
 }
 
 func (r *MongoDealerRepository) GetLocationsWithSubLocations(ctx context.Context) ([]models.LocationWithSubLocations, error) {
@@ -116,7 +147,7 @@ func (r *MongoDealerRepository) GetLocationsWithSubLocations(ctx context.Context
 		options.Find().SetProjection(bson.M{
 			"location":     1,
 			"sub_location": 1,
-			"_id":          0, // exclude _id if not needed
+			"_id":          0,
 		}),
 	)
 	if err != nil {
@@ -128,16 +159,16 @@ func (r *MongoDealerRepository) GetLocationsWithSubLocations(ctx context.Context
 	locationMap := make(map[string]map[string]struct{})
 
 	for cursor.Next(ctx) {
-		var dealer models.Dealer
-		if err := cursor.Decode(&dealer); err != nil {
+		var mongoDealer mongoModels.Dealer
+		if err := cursor.Decode(&mongoDealer); err != nil {
 			return nil, err
 		}
 
-		if dealer.Location != "" && dealer.SubLocation != "" {
-			if _, ok := locationMap[dealer.Location]; !ok {
-				locationMap[dealer.Location] = make(map[string]struct{})
+		if mongoDealer.Location != "" && mongoDealer.SubLocation != "" {
+			if _, ok := locationMap[mongoDealer.Location]; !ok {
+				locationMap[mongoDealer.Location] = make(map[string]struct{})
 			}
-			locationMap[dealer.Location][dealer.SubLocation] = struct{}{}
+			locationMap[mongoDealer.Location][mongoDealer.SubLocation] = struct{}{}
 		}
 	}
 
@@ -157,5 +188,4 @@ func (r *MongoDealerRepository) GetLocationsWithSubLocations(ctx context.Context
 	}
 
 	return result, nil
-
 }

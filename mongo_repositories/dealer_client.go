@@ -1,8 +1,9 @@
-package mongo_repository
+package mongo_repositories
 
 import (
 	"context"
-	"myapp/mongo_models"
+	"myapp/models"
+	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,24 +21,45 @@ func NewMongoDealerClientRepository(dealerClientCollection *mongo.Collection) re
 	}
 }
 
-func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient models.DealerClient) (primitive.ObjectID, error) {
-	result, err := r.dealerClientCollection.InsertOne(ctx, dealerClient)
+func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient models.DealerClient) (string, error) {
+
+	dealerObjectID, err := primitive.ObjectIDFromHex(dealerClient.DealerID)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
-	return result.InsertedID.(primitive.ObjectID), nil
+
+	propertyObjectID, err := primitive.ObjectIDFromHex(dealerClient.PropertyID)
+	if err != nil {
+		return "", err
+	}
+
+	mongoDealerClient := mongoModels.DealerClient{
+		DealerID:   dealerObjectID,
+		PropertyID: propertyObjectID,
+		Name:       dealerClient.Name,
+		Phone:      dealerClient.Phone,
+		Note:       dealerClient.Note,
+		Status:     dealerClient.Status,
+	}
+
+	result, err := r.dealerClientCollection.InsertOne(ctx, mongoDealerClient)
+	if err != nil {
+		return "", err
+	}
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.DealerClient, error) {
+func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (models.DealerClient, error) {
+	
 	var dealerClient models.DealerClient
 	err := r.dealerClientCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&dealerClient)
 	if err != nil {
-		return nil, err
+		return models.DealerClient{}, err
 	}
-	return &dealerClient, nil
+	return dealerClient, nil
 }
 
-func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerID primitive.ObjectID) ([]models.DealerClient, error) {
+func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerID string) ([]models.DealerClient, error) {
 	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"dealer_id": dealerID})
 	if err != nil {
 		return nil, err
@@ -51,8 +73,12 @@ func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerI
 	return dealerClients, nil
 }
 
-func (r *MongoDealerClientRepository) GetByPropertyID(ctx context.Context, propertyID primitive.ObjectID) ([]models.DealerClient, error) {
-	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"property_id": propertyID})
+func (r *MongoDealerClientRepository) GetByPropertyID(ctx context.Context, propertyID string) ([]models.DealerClient, error) {
+	propertyObjectID, err := primitive.ObjectIDFromHex(propertyID)
+	if err != nil {
+		return nil, err
+	}
+	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"property_id": propertyObjectID})
 	if err != nil {
 		return nil, err
 	}
@@ -79,21 +105,39 @@ func (r *MongoDealerClientRepository) GetAll(ctx context.Context) ([]models.Deal
 	return dealerClients, nil
 }
 
-func (r *MongoDealerClientRepository) Update(ctx context.Context, id primitive.ObjectID, updates map[string]interface{}) error {
+func (r *MongoDealerClientRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
 	update := bson.M{"$set": updates}
-	_, err := r.dealerClientCollection.UpdateByID(ctx, id, update)
+	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
 	return err
 }
 
-func (r *MongoDealerClientRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
-	_, err := r.dealerClientCollection.DeleteOne(ctx, bson.M{"_id": id})
+func (r *MongoDealerClientRepository) Delete(ctx context.Context, id string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	_, err = r.dealerClientCollection.DeleteOne(ctx, bson.M{"_id": objectID})
 	return err
 }
 
-func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID, phone string) (bool, error) {
+func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, propertyID string, phone string) (bool, error) {
+	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
+	if err != nil {
+		return false, err
+	}
+
+	propertyObjectID, err := primitive.ObjectIDFromHex(propertyID)
+	if err != nil {
+		return false, err
+	}
+
 	filter := bson.M{
-		"dealer_id":   dealerID,
-		"property_id": propertyID,
+		"dealer_id":   dealerObjectID,
+		"property_id": propertyObjectID,
 		"phone":       phone,
 	}
 
@@ -105,8 +149,12 @@ func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Cont
 	return count > 0, nil
 }
 
-func (r *MongoDealerClientRepository) UpdateStatus(ctx context.Context, id primitive.ObjectID, status string) error {
+func (r *MongoDealerClientRepository) UpdateStatus(ctx context.Context, id string, status string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
 	update := bson.M{"$set": bson.M{"status": status}}
-	_, err := r.dealerClientCollection.UpdateByID(ctx, id, update)
+	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
 	return err
 }

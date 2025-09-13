@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/response"
 	"myapp/services"
 	"myapp/validate"
@@ -153,7 +153,7 @@ func (h *DealerHandler) UpdateDealer(w http.ResponseWriter, r *http.Request) {
 		"location":       dealer.Location,
 		"sub_location":   dealer.SubLocation,
 	}
-	err = h.Service.UpdateDealer(r.Context(), dealerObjID, updateData)
+	err = h.Service.UpdateDealer(r.Context(), dealerObjID.Hex(), updateData)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to update dealer: "+err.Error())
 		return
@@ -178,7 +178,7 @@ func (h *DealerHandler) DeleteDealer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Service.DeleteDealer(r.Context(), dealerObjID)
+	err = h.Service.DeleteDealer(r.Context(), dealerObjID.Hex())
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to delete dealer: "+err.Error())
 		return
@@ -223,7 +223,7 @@ func (h *DealerHandler) ResetPasswordDealer(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = h.Service.ResetPasswordDealer(r.Context(), dealerObjID, requestBody.Password)
+	err = h.Service.ResetPasswordDealer(r.Context(), dealerObjID.Hex(), requestBody.Password)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to reset password: "+err.Error())
 		return

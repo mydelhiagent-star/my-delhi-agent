@@ -1,10 +1,11 @@
-package mongo_repository
+package mongo_repositories
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"myapp/mongo_models"
+	"myapp/models"
+	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,23 +25,49 @@ func NewMongoLeadRepository(leadCollection, propertyCollection *mongo.Collection
 	}
 }
 
-func (r *MongoLeadRepository) Create(ctx context.Context, lead models.Lead) (primitive.ObjectID, error) {
-	res, err := r.leadCollection.InsertOne(ctx, lead)
+func (r *MongoLeadRepository) Create(ctx context.Context, lead models.Lead) (string, error) {
+	// Convert models.LeadData to mongoModels.Lead
+	mongoLead := mongoModels.Lead{
+		Name:         lead.Name,
+		Phone:        lead.Phone,
+		Requirement:  lead.Requirement,
+		AadharNumber: lead.AadharNumber,
+		AadharPhoto:  lead.AadharPhoto,
+	}
+
+	res, err := r.leadCollection.InsertOne(ctx, mongoLead)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
 
 	id, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return primitive.NilObjectID, errors.New("failed to convert inserted ID")
+		return "", errors.New("failed to convert inserted ID")
 	}
-	return id, nil
+	return id.Hex(), nil
 }
 
-func (r *MongoLeadRepository) GetByID(ctx context.Context, id primitive.ObjectID) (models.Lead, error) {
-	var lead models.Lead
-	err := r.leadCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&lead)
-	return lead, err
+func (r *MongoLeadRepository) GetByID(ctx context.Context, id string) (models.Lead, error) {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return models.Lead{}, err
+	}
+
+	var mongoLead mongoModels.Lead
+	err = r.leadCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&mongoLead)
+	if err != nil {
+		return models.Lead{}, err
+	}
+
+	// Convert mongoModels.Lead to models.LeadData
+	return models.Lead{
+		ID:           mongoLead.ID.Hex(),
+		Name:         mongoLead.Name,
+		Phone:        mongoLead.Phone,
+		Requirement:  mongoLead.Requirement,
+		AadharNumber: mongoLead.AadharNumber,
+		AadharPhoto:  mongoLead.AadharPhoto,
+	}, nil
 }
 
 func (r *MongoLeadRepository) GetAll(ctx context.Context) ([]models.Lead, error) {
@@ -49,27 +76,58 @@ func (r *MongoLeadRepository) GetAll(ctx context.Context) ([]models.Lead, error)
 		return nil, err
 	}
 
-	var leads []models.Lead
-	if err = cursor.All(ctx, &leads); err != nil {
+	var mongoLeads []mongoModels.Lead
+	if err = cursor.All(ctx, &mongoLeads); err != nil {
 		return nil, err
+	}
+
+	// Convert mongoModels.Lead to models.LeadData
+	var leads []models.Lead
+	for _, mongoLead := range mongoLeads {
+		leads = append(leads, models.Lead{
+			ID:           mongoLead.ID.Hex(),
+			Name:         mongoLead.Name,
+			Phone:        mongoLead.Phone,
+			Requirement:  mongoLead.Requirement,
+			AadharNumber: mongoLead.AadharNumber,
+			AadharPhoto:  mongoLead.AadharPhoto,
+		})
 	}
 	return leads, nil
 }
 
-func (r *MongoLeadRepository) GetByDealerID(ctx context.Context, dealerID primitive.ObjectID) ([]models.Lead, error) {
-	cursor, err := r.leadCollection.Find(ctx, bson.M{"dealer_id": dealerID})
+func (r *MongoLeadRepository) GetByDealerID(ctx context.Context, dealerID string) ([]models.Lead, error) {
+	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
 	if err != nil {
 		return nil, err
 	}
 
-	var leads []models.Lead
-	if err = cursor.All(ctx, &leads); err != nil {
+	cursor, err := r.leadCollection.Find(ctx, bson.M{"dealer_id": dealerObjectID})
+	if err != nil {
 		return nil, err
+	}
+
+	var mongoLeads []mongoModels.Lead
+	if err = cursor.All(ctx, &mongoLeads); err != nil {
+		return nil, err
+	}
+
+	// Convert mongoModels.Lead to models.LeadData
+	var leads []models.Lead
+	for _, mongoLead := range mongoLeads {
+		leads = append(leads, models.Lead{
+			ID:           mongoLead.ID.Hex(),
+			Name:         mongoLead.Name,
+			Phone:        mongoLead.Phone,
+			Requirement:  mongoLead.Requirement,
+			AadharNumber: mongoLead.AadharNumber,
+			AadharPhoto:  mongoLead.AadharPhoto,
+		})
 	}
 	return leads, nil
 }
 
-func (r *MongoLeadRepository) Search(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Lead, error) {
+func (r *MongoLeadRepository) Search(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error) {
 	skip := (page - 1) * limit
 
 	pipeline := mongo.Pipeline{
@@ -84,33 +142,79 @@ func (r *MongoLeadRepository) Search(ctx context.Context, filter bson.M, page, l
 	}
 	defer cursor.Close(ctx)
 
-	var leads []models.Lead
-	if err := cursor.All(ctx, &leads); err != nil {
+	var mongoLeads []mongoModels.Lead
+	if err := cursor.All(ctx, &mongoLeads); err != nil {
 		return nil, err
+	}
+
+	// Convert mongoModels.Lead to models.LeadData
+	var leads []models.Lead
+	for _, mongoLead := range mongoLeads {
+		leads = append(leads, models.Lead{
+			ID:           mongoLead.ID.Hex(),
+			Name:         mongoLead.Name,
+			Phone:        mongoLead.Phone,
+			Requirement:  mongoLead.Requirement,
+			AadharNumber: mongoLead.AadharNumber,
+			AadharPhoto:  mongoLead.AadharPhoto,
+		})
 	}
 	return leads, nil
 }
 
-func (r *MongoLeadRepository) Update(ctx context.Context, id primitive.ObjectID, updates map[string]interface{}) error {
-	update := bson.M{"$set": updates}
-	_, err := r.leadCollection.UpdateByID(ctx, id, update)
-	return err
-}
-
-func (r *MongoLeadRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
-	_, err := r.leadCollection.DeleteOne(ctx, bson.M{"_id": id})
-	return err
-}
-
-func (r *MongoLeadRepository) AddPropertyInterest(ctx context.Context, leadID primitive.ObjectID, propertyInterest models.PropertyInterest) error {
-	// Check if property already exists for this lead
-	filter := bson.M{
-		"_id":                    leadID,
-		"properties.property_id": propertyInterest.PropertyID,
+func (r *MongoLeadRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
 	}
 
-	var existingLead models.Lead
-	err := r.leadCollection.FindOne(ctx, filter).Decode(&existingLead)
+	update := bson.M{"$set": updates}
+	_, err = r.leadCollection.UpdateByID(ctx, objectID, update)
+	return err
+}
+
+func (r *MongoLeadRepository) Delete(ctx context.Context, id string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.leadCollection.DeleteOne(ctx, bson.M{"_id": objectID})
+	return err
+}
+
+func (r *MongoLeadRepository) AddPropertyInterest(ctx context.Context, leadID string, propertyInterest models.PropertyInterest) error {
+	leadObjectID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		return err
+	}
+
+	propertyObjectID, err := primitive.ObjectIDFromHex(propertyInterest.PropertyID)
+	if err != nil {
+		return err
+	}
+
+	dealerObjectID, err := primitive.ObjectIDFromHex(propertyInterest.DealerID)
+	if err != nil {
+		return err
+	}
+
+	// Convert models.PropertyInterestData to mongoModels.PropertyInterest
+	mongoPropertyInterest := mongoModels.PropertyInterest{
+		PropertyID: propertyObjectID,
+		DealerID:   dealerObjectID,
+		Status:     propertyInterest.Status,
+		Note:       propertyInterest.Note,
+	}
+
+	// Check if property already exists for this lead
+	filter := bson.M{
+		"_id":                    leadObjectID,
+		"properties.property_id": propertyObjectID,
+	}
+
+	var existingLead mongoModels.Lead
+	err = r.leadCollection.FindOne(ctx, filter).Decode(&existingLead)
 	if err == nil {
 		return errors.New("property already added to this lead")
 	} else if err != mongo.ErrNoDocuments {
@@ -120,18 +224,28 @@ func (r *MongoLeadRepository) AddPropertyInterest(ctx context.Context, leadID pr
 	// Add property interest
 	update := bson.M{
 		"$push": bson.M{
-			"properties": propertyInterest,
+			"properties": mongoPropertyInterest,
 		},
 	}
 
-	_, err = r.leadCollection.UpdateOne(ctx, bson.M{"_id": leadID}, update)
+	_, err = r.leadCollection.UpdateOne(ctx, bson.M{"_id": leadObjectID}, update)
 	return err
 }
 
-func (r *MongoLeadRepository) UpdatePropertyInterest(ctx context.Context, leadID, propertyID primitive.ObjectID, status, note string) error {
+func (r *MongoLeadRepository) UpdatePropertyInterest(ctx context.Context, leadID, propertyID string, status, note string) error {
+	leadObjectID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		return err
+	}
+
+	propertyObjectID, err := primitive.ObjectIDFromHex(propertyID)
+	if err != nil {
+		return err
+	}
+
 	filter := bson.M{
-		"_id":                    leadID,
-		"properties.property_id": propertyID,
+		"_id":                    leadObjectID,
+		"properties.property_id": propertyObjectID,
 	}
 
 	update := bson.M{
@@ -153,9 +267,14 @@ func (r *MongoLeadRepository) UpdatePropertyInterest(ctx context.Context, leadID
 	return nil
 }
 
-func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID primitive.ObjectID) ([]bson.M, error) {
+func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID string) ([]map[string]interface{}, error) {
+	leadObjectID, err := primitive.ObjectIDFromHex(leadID)
+	if err != nil {
+		return nil, err
+	}
+
 	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{"_id": leadID}}},
+		{{Key: "$match", Value: bson.M{"_id": leadObjectID}}},
 		{{Key: "$unwind", Value: "$properties"}},
 		{{Key: "$lookup", Value: bson.M{
 			"from":         "property",
@@ -187,7 +306,7 @@ func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID
 	}
 	defer cursor.Close(ctx)
 
-	var results []bson.M
+	var results []map[string]interface{}
 	if err := cursor.All(ctx, &results); err != nil {
 		return nil, err
 	}
@@ -195,16 +314,21 @@ func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID
 	return results, nil
 }
 
-func (r *MongoLeadRepository) GetDealerLeads(ctx context.Context, dealerID primitive.ObjectID) ([]models.Lead, error) {
+func (r *MongoLeadRepository) GetDealerLeads(ctx context.Context, dealerID string) ([]models.Lead, error) {
+	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
+	if err != nil {
+		return nil, err
+	}
+
 	pipeline := mongo.Pipeline{
 		{{Key: "$match", Value: bson.M{
-			"properties.dealer_id": dealerID,
+			"properties.dealer_id": dealerObjectID,
 		}}},
 		{{Key: "$addFields", Value: bson.M{
 			"properties": bson.M{
 				"$filter": bson.M{
 					"input": "$properties",
-					"cond":  bson.M{"$eq": []interface{}{"$$this.dealer_id", dealerID}},
+					"cond":  bson.M{"$eq": []interface{}{"$$this.dealer_id", dealerObjectID}},
 				},
 			},
 		}}},
@@ -216,15 +340,28 @@ func (r *MongoLeadRepository) GetDealerLeads(ctx context.Context, dealerID primi
 	}
 	defer cursor.Close(ctx)
 
-	var leads []models.Lead
-	if err := cursor.All(ctx, &leads); err != nil {
+	var mongoLeads []mongoModels.Lead
+	if err := cursor.All(ctx, &mongoLeads); err != nil {
 		return nil, err
+	}
+
+	// Convert mongoModels.Lead to models.LeadData
+	var leads []models.Lead
+	for _, mongoLead := range mongoLeads {
+		leads = append(leads, models.Lead{
+			ID:           mongoLead.ID.Hex(),
+			Name:         mongoLead.Name,
+			Phone:        mongoLead.Phone,
+			Requirement:  mongoLead.Requirement,
+			AadharNumber: mongoLead.AadharNumber,
+			AadharPhoto:  mongoLead.AadharPhoto,
+		})
 	}
 
 	return leads, nil
 }
 
-func (r *MongoLeadRepository) GetPropertyDetails(ctx context.Context, soldStr, deletedStr string) ([]bson.M, error) {
+func (r *MongoLeadRepository) GetPropertyDetails(ctx context.Context, soldStr, deletedStr string) ([]map[string]interface{}, error) {
 	filter := bson.M{}
 
 	if soldStr != "" {
@@ -249,7 +386,7 @@ func (r *MongoLeadRepository) GetPropertyDetails(ctx context.Context, soldStr, d
 	}
 	defer cursor.Close(ctx)
 
-	var results []bson.M
+	var results []map[string]interface{}
 	if err := cursor.All(ctx, &results); err != nil {
 		return nil, err
 	}

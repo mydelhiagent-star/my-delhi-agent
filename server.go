@@ -5,7 +5,7 @@ import (
 	"myapp/config"
 	"myapp/databases"
 	"myapp/handlers"
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/mongo_repositories"
 	"myapp/response"
 	"myapp/routes"
@@ -21,9 +21,9 @@ import (
 
 func main() {
 	cfg := config.LoadConfig()
-	client := database.ConnectMongo(cfg.MongoURI)
+	client := databases.ConnectMongo(cfg.MongoURI)
 
-	redisClient, err := database.ConnectRedis(cfg.RedisURI, cfg.RedisUsername, cfg.RedisPassword)
+	redisClient, err := databases.ConnectRedis(cfg.RedisURI, cfg.RedisUsername, cfg.RedisPassword)
 	if err != nil {
 		log.Printf("⚠️  Redis connection failed: %v", err)
 	} else {
@@ -41,21 +41,21 @@ func main() {
 	dealerCollection := client.Database(cfg.MongoDB).Collection("dealers")
 	leadCollection := client.Database(cfg.MongoDB).Collection("leads")
 	propertyCollection := client.Database(cfg.MongoDB).Collection("property")
-	tokenCollection := client.Database(cfg.MongoDB).Collection("token")
+	// tokenCollection := client.Database(cfg.MongoDB).Collection("token")
 	counterCollection := client.Database(cfg.MongoDB).Collection("counters")
 	dealerClientCollection := client.Database(cfg.MongoDB).Collection("dealer_clients")
 
 	// Initialize repositories
-	dealerRepo := mongo_repository.NewMongoDealerRepository(dealerCollection)
-	leadRepo := mongo_repository.NewMongoLeadRepository(leadCollection, propertyCollection)
-	propertyRepo := mongo_repository.NewMongoPropertyRepository(propertyCollection, counterCollection, redisClient)
-	tokenRepo := mongo_repository.NewMongoTokenRepository(tokenCollection)
-	dealerClientRepo := mongo_repository.NewMongoDealerClientRepository(dealerClientCollection)
+	dealerRepo := mongo_repositories.NewMongoDealerRepository(dealerCollection)
+	leadRepo := mongo_repositories.NewMongoLeadRepository(leadCollection, propertyCollection)
+	propertyRepo := mongo_repositories.NewMongoPropertyRepository(propertyCollection, counterCollection, redisClient)
+	// tokenRepo := mongo_repositories.NewMongoTokenRepository(tokenCollection)
+	dealerClientRepo := mongo_repositories.NewMongoDealerClientRepository(dealerClientCollection)
 
 	// Initialize services with repositories
 	dealerService := &services.DealerService{
 		DealerRepo: dealerRepo,
-		TokenRepo:  tokenRepo,
+		// TokenRepo:  tokenRepo,
 		JWTSecret:  cfg.JWTSecret,
 	}
 	dealerHandler := &handlers.DealerHandler{Service: dealerService}

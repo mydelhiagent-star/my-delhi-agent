@@ -1,6 +1,9 @@
 package models
 
-import "github.com/golang-jwt/jwt/v5"
+
+import (
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type Claims struct {
 	ID    string `json:"id"`
@@ -9,7 +12,5 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type Token struct {
-	Token string `bson:"token" json:"token"`
-	User  string `bson:"user" json:"user"`
-}
+
+

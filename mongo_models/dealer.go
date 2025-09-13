@@ -1,7 +1,9 @@
 package models
 
-import(
-	 "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 type Dealer struct {
 	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
@@ -13,6 +15,8 @@ type Dealer struct {
 	ShopName string `json:"shop_name" bson:"shop_name"`
 	Location string `json:"location" bson:"location"`
 	SubLocation string `json:"sub_location" bson:"sub_location"`
+	CreatedAt time.Time `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" bson:"updated_at"`
 }
 
 type LocationWithSubLocations struct {

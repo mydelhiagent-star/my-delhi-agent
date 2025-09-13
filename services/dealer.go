@@ -7,13 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/repositories"
 	"myapp/utils"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,14 +24,14 @@ type DealerService struct {
 }
 
 func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) error {
-	// ← HASH password before insertion
+	// Hash password before insertion
 	hash, err := utils.HashPassword(dealer.Password)
 	if err != nil {
 		return err
 	}
 	dealer.Password = string(hash)
 
-	// ← Insert dealer (relying on MongoDB's unique constraints)
+	// Insert dealer (relying on MongoDB's unique constraints)
 	_, err = s.DealerRepo.Create(ctx, dealer)
 	if err != nil {
 		// Check if the error is a unique constraint violation (e.g., phone or sublocation already exists)
@@ -52,7 +51,6 @@ func (s *DealerService) CreateDealer(ctx context.Context, dealer models.Dealer) 
 }
 
 func (s *DealerService) LoginDealer(ctx context.Context, phone, password string) (string, error) {
-
 	dbUser, err := s.DealerRepo.GetByPhone(ctx, phone)
 	if err != nil {
 		return "", errors.New("invalid phone number")
@@ -64,7 +62,7 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 	}
 
 	claims := &models.Claims{
-		ID:    dbUser.ID.Hex(),
+		ID:    dbUser.ID,
 		Phone: dbUser.Phone,
 		Role:  "dealer",
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -78,10 +76,14 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 	if err != nil {
 		return "", err
 	}
+	
 	tokenModel := models.Token{
-		Token: tokenString,
-		User:  dbUser.ID.Hex(),
+		Token:     tokenString,
+		UserID:    dbUser.ID,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
+	
 	err = s.TokenRepo.Create(ctx, tokenModel)
 	if err != nil {
 		return "", err
@@ -105,7 +107,7 @@ func (s *DealerService) GetLocationsWithSubLocations(ctx context.Context) ([]mod
 	return s.DealerRepo.GetLocationsWithSubLocations(ctx)
 }
 
-func (s *DealerService) DealerExists(ctx context.Context, dealerID primitive.ObjectID) (bool, error) {
+func (s *DealerService) DealerExists(ctx context.Context, dealerID string) (bool, error) {
 	return s.DealerRepo.Exists(ctx, dealerID)
 }
 
@@ -115,15 +117,15 @@ func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation
 	return []map[string]interface{}{}, nil
 }
 
-func (s *DealerService) UpdateDealer(ctx context.Context, id primitive.ObjectID, updates map[string]interface{}) error {
+func (s *DealerService) UpdateDealer(ctx context.Context, id string, updates map[string]interface{}) error {
 	return s.DealerRepo.Update(ctx, id, updates)
 }
 
-func (s *DealerService) DeleteDealer(ctx context.Context, id primitive.ObjectID) error {
+func (s *DealerService) DeleteDealer(ctx context.Context, id string) error {
 	return s.DealerRepo.Delete(ctx, id)
 }
 
-func (s *DealerService) ResetPasswordDealer(ctx context.Context, dealerID primitive.ObjectID, newPassword string) error {
+func (s *DealerService) ResetPasswordDealer(ctx context.Context, dealerID string, newPassword string) error {
 	// Hash the new password
 	hash, err := utils.HashPassword(newPassword)
 	if err != nil {

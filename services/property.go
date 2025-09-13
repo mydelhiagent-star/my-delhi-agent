@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/repositories"
 	"myapp/utils"
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PropertyService struct {
@@ -19,8 +17,8 @@ type PropertyService struct {
 	RedisClient *redis.Client
 }
 
-func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (primitive.ObjectID, error) {
-	var resultID primitive.ObjectID
+func (s *PropertyService) CreateProperty(ctx context.Context, property models.Property) (string, error) {
+	var resultID string
 
 	err := utils.Retry(ctx, func() error {
 		propertyNumber, err := s.Repo.GetNextPropertyNumber(ctx)
@@ -39,7 +37,7 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 	})
 
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
 
 	if s.RedisClient != nil {
@@ -49,15 +47,15 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 	return resultID, nil
 }
 
-func (s *PropertyService) GetPropertyByNumber(ctx context.Context, propertyNumber int64) (*models.Property, error) {
+func (s *PropertyService) GetPropertyByNumber(ctx context.Context, propertyNumber int64) (models.Property, error) {
 	return s.Repo.GetByNumber(ctx, propertyNumber)
 }
 
-func (s *PropertyService) GetPropertyByID(id primitive.ObjectID) (*models.Property, error) {
+func (s *PropertyService) GetPropertyByID(id string) (models.Property, error) {
 	return s.Repo.GetByID(context.Background(), id)
 }
 
-func (s *PropertyService) UpdateProperty(id primitive.ObjectID, updates models.PropertyUpdate) error {
+func (s *PropertyService) UpdateProperty(id string, updates models.PropertyUpdate) error {
 	// Get property first to find dealer ID for cache invalidation
 	property, err := s.Repo.GetByID(context.Background(), id)
 	if err != nil {
@@ -78,7 +76,7 @@ func (s *PropertyService) UpdateProperty(id primitive.ObjectID, updates models.P
 	return nil
 }
 
-func (s *PropertyService) DeleteProperty(id primitive.ObjectID) error {
+func (s *PropertyService) DeleteProperty(id string) error {
 	// Get property first to find dealer ID for cache invalidation
 	property, err := s.Repo.GetByID(context.Background(), id)
 	if err != nil {
@@ -103,8 +101,8 @@ func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Proper
 	return s.Repo.GetAll(ctx)
 }
 
-func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID primitive.ObjectID, page, limit int) ([]models.Property, error) {
-	// ← VALIDATE inputs
+func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID string, page, limit int) ([]models.Property, error) {
+	// Validate inputs
 	if page < 1 {
 		page = 1
 	}
@@ -112,7 +110,7 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 		limit = 12 // Default limit
 	}
 
-	redisKey := fmt.Sprintf("properties_by_dealer:%s:page:%d:limit:%d", dealerID.Hex(), page, limit)
+	redisKey := fmt.Sprintf("properties_by_dealer:%s:page:%d:limit:%d", dealerID, page, limit)
 	if s.RedisClient != nil {
 		cached, err := s.RedisClient.Get(ctx, redisKey).Result()
 		if err == nil {
@@ -137,15 +135,15 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID pr
 	return properties, nil
 }
 
-func (s *PropertyService) SearchProperties(ctx context.Context, filter bson.M, page, limit int, fields []string) ([]models.Property, error) {
+func (s *PropertyService) SearchProperties(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Property, error) {
 	return s.Repo.Search(ctx, filter, page, limit, fields)
 }
 
-func (s *PropertyService) InvalidateDealerPropertyCache(dealerID primitive.ObjectID) {
+func (s *PropertyService) InvalidateDealerPropertyCache(dealerID string) {
 	ctx := context.Background()
 
 	// Invalidate all dealer property pages
-	pattern := fmt.Sprintf("properties_by_dealer:%s:page:*", dealerID.Hex())
+	pattern := fmt.Sprintf("properties_by_dealer:%s:page:*", dealerID)
 	keys, err := s.RedisClient.Keys(ctx, pattern).Result()
 	if err == nil {
 		for _, key := range keys {
@@ -154,6 +152,6 @@ func (s *PropertyService) InvalidateDealerPropertyCache(dealerID primitive.Objec
 	}
 }
 
-func (s *PropertyService) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Property, error) {
+func (s *PropertyService) GetByID(ctx context.Context, id string) (models.Property, error) {
 	return s.Repo.GetByID(ctx, id)
 }

@@ -1,8 +1,9 @@
-package database
+package databases
 
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -38,4 +39,23 @@ func ConnectMongo(uri string) *mongo.Client {
 
 	log.Println("✅ Connected to MongoDB with optimized connection pool")
 	return client
+}
+
+// InitMongoDB initializes MongoDB connection and returns database instance
+func InitMongoDB() (*mongo.Database, error) {
+	uri := os.Getenv("MONGO_URI")
+	if uri == "" {
+		uri = "mongodb://localhost:27017"
+	}
+
+	dbName := os.Getenv("MONGO_DB_NAME")
+	if dbName == "" {
+		dbName = "delhi_agent"
+	}
+
+	client := ConnectMongo(uri)
+	db := client.Database(dbName)
+
+	log.Printf("MongoDB database '%s' initialized successfully", dbName)
+	return db, nil
 }

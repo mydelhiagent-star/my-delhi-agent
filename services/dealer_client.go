@@ -3,28 +3,26 @@ package services
 import (
 	"context"
 	"errors"
-	"myapp/mongo_models"
+	"myapp/models"
 	"myapp/repositories"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DealerClientService struct {
 	Repo repositories.DealerClientRepository
 }
 
-func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID, phone string) (bool, error) {
+func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, propertyID string, phone string) (bool, error) {
 	return s.Repo.CheckPhoneExistsForDealer(ctx, dealerID, propertyID, phone)
 }
 
-func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (primitive.ObjectID, error) {
-	// Check if phone number already exists for this dealer
+func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (string, error) {
+	
 	exists, err := s.CheckPhoneExistsForDealer(ctx, dealerClient.DealerID, dealerClient.PropertyID, dealerClient.Phone)
 	if err != nil {
-		return primitive.NilObjectID, err
+		return "", err
 	}
 	if exists {
-		return primitive.NilObjectID, errors.New("phone number already exists")
+		return "", errors.New("phone number already exists")
 	}
 
 	// Set default status
@@ -33,11 +31,11 @@ func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClie
 	return s.Repo.Create(ctx, dealerClient)
 }
 
-func (s *DealerClientService) GetDealerClientByPropertyID(ctx context.Context, dealerID primitive.ObjectID, propertyID primitive.ObjectID) ([]models.DealerClient, error) {
+func (s *DealerClientService) GetDealerClientByPropertyID(ctx context.Context, dealerID string, propertyID string) ([]models.DealerClient, error) {
 	return s.Repo.GetByPropertyID(ctx, propertyID)
 }
 
-func (s *DealerClientService) GetDealerClientsByDealerID(ctx context.Context, dealerID primitive.ObjectID) ([]models.DealerClient, error) {
+func (s *DealerClientService) GetDealerClientsByDealerID(ctx context.Context, dealerID string) ([]models.DealerClient, error) {
 	return s.Repo.GetByDealerID(ctx, dealerID)
 }
 
@@ -45,18 +43,18 @@ func (s *DealerClientService) GetAllDealerClients(ctx context.Context) ([]models
 	return s.Repo.GetAll(ctx)
 }
 
-func (s *DealerClientService) UpdateDealerClient(ctx context.Context, id primitive.ObjectID, updates map[string]interface{}) error {
+func (s *DealerClientService) UpdateDealerClient(ctx context.Context, id string, updates map[string]interface{}) error {
 	return s.Repo.Update(ctx, id, updates)
 }
 
-func (s *DealerClientService) DeleteDealerClient(ctx context.Context, id primitive.ObjectID) error {
+func (s *DealerClientService) DeleteDealerClient(ctx context.Context, id string) error {
 	return s.Repo.Delete(ctx, id)
 }
 
-func (s *DealerClientService) GetDealerClientByID(ctx context.Context, id primitive.ObjectID) (*models.DealerClient, error) {
+func (s *DealerClientService) GetDealerClientByID(ctx context.Context, id string) (models.DealerClient, error) {
 	return s.Repo.GetByID(ctx, id)
 }
 
-func (s *DealerClientService) UpdateDealerClientStatus(ctx context.Context, id primitive.ObjectID, status string) error {
+func (s *DealerClientService) UpdateDealerClientStatus(ctx context.Context, id string, status string) error {
 	return s.Repo.UpdateStatus(ctx, id, status)
 }

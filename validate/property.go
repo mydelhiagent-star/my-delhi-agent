@@ -2,7 +2,7 @@ package validate
 
 import (
 	"errors"
-	"myapp/mongo_models"
+	"myapp/models"
 )
 
 func ValidateProperty(property models.Property) error {
