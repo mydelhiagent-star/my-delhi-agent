@@ -29,8 +29,8 @@ type Property struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-// PropertyUpdateData represents updates for a property
-type PropertyUpdateData struct {
+
+type PropertyUpdate struct {
 	Title           *string    `json:"title,omitempty"`
 	Address         *string    `json:"address,omitempty"`
 	NearestLandmark *string    `json:"nearest_landmark,omitempty"`

@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// LeadData represents a database-agnostic lead model
 type Lead struct {
 	ID           string                 `json:"id"`
 	Name         string                 `json:"name"`
