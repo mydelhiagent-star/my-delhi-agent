@@ -2,7 +2,7 @@ package validate
 
 import (
 	"errors"
-	"myapp/models"
+	"myapp/mongo_models"
 )
 
 func ValidateDealer(dealer models.Dealer) error {

@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"errors"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"

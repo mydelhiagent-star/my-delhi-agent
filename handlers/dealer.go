@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/response"
 	"myapp/services"
 	"myapp/validate"

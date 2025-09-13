@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"myapp/models"
+	"myapp/mongo_models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

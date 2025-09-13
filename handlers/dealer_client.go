@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"myapp/middlewares"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/response"
 	"myapp/services"
 	"net/http"

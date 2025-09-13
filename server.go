@@ -5,7 +5,7 @@ import (
 	"myapp/config"
 	"myapp/databases"
 	"myapp/handlers"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/mongo_repositories"
 	"myapp/response"
 	"myapp/routes"

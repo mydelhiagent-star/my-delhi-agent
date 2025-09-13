@@ -3,7 +3,7 @@ package mongo_repository
 import (
 	"context"
 	"myapp/constants"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"

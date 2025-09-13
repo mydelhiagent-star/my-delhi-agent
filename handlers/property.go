@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"myapp/middlewares"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/response"
 	"myapp/services"
 	"myapp/utils"

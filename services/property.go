@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/repositories"
 	"myapp/utils"
 	"time"

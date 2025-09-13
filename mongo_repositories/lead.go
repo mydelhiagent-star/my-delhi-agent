@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"

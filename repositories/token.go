@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"myapp/models"
+	"myapp/mongo_models"
 )
 
 // TokenRepository defines the interface for token data operations

@@ -3,7 +3,7 @@ package mongo_repository
 import (
 	"context"
 	"fmt"
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/repositories"
 	"time"
 

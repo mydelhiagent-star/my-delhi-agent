@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"myapp/models"
+	"myapp/mongo_models"
 	"myapp/repositories"
 	"myapp/utils"
 
