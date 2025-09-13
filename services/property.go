@@ -47,13 +47,9 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 	return resultID, nil
 }
 
-func (s *PropertyService) GetPropertyByNumber(ctx context.Context, propertyNumber int64) (models.Property, error) {
-	return s.Repo.GetByNumber(ctx, propertyNumber)
-}
 
-func (s *PropertyService) GetPropertyByID(id string) (models.Property, error) {
-	return s.Repo.GetByID(context.Background(), id)
-}
+
+
 
 func (s *PropertyService) UpdateProperty(id string, updates models.PropertyUpdate) error {
 	// Get property first to find dealer ID for cache invalidation
@@ -97,9 +93,7 @@ func (s *PropertyService) DeleteProperty(id string) error {
 	return nil
 }
 
-func (s *PropertyService) GetAllProperties(ctx context.Context) ([]models.Property, error) {
-	return s.Repo.GetAll(ctx)
-}
+
 
 func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID string, page, limit int) ([]models.Property, error) {
 	// Validate inputs
@@ -135,9 +129,7 @@ func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID st
 	return properties, nil
 }
 
-func (s *PropertyService) SearchProperties(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Property, error) {
-	return s.Repo.Search(ctx, filter, page, limit, fields)
-}
+
 
 func (s *PropertyService) InvalidateDealerPropertyCache(dealerID string) {
 	ctx := context.Background()
@@ -152,6 +144,6 @@ func (s *PropertyService) InvalidateDealerPropertyCache(dealerID string) {
 	}
 }
 
-func (s *PropertyService) GetByID(ctx context.Context, id string) (models.Property, error) {
-	return s.Repo.GetByID(ctx, id)
+func (s *PropertyService) GetProperties(ctx context.Context) ([]models.Property, error) {
+	return s.Repo.GetAll(ctx)
 }

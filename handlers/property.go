@@ -4,20 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
-
 	"myapp/middlewares"
 	"myapp/models"
 	"myapp/response"
 	"myapp/services"
-	"myapp/utils"
 	"myapp/validate"
-
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	
 )
 
 type PropertyHandler struct {
@@ -26,7 +21,7 @@ type PropertyHandler struct {
 	CloudflarePublicURL string
 }
 
-// Create
+
 func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request) {
 	var property models.Property
 	if err := json.NewDecoder(r.Body).Decode(&property); err != nil {
@@ -92,29 +87,9 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-// Get
-func (h *PropertyHandler) GetProperty(w http.ResponseWriter, r *http.Request) {
-	idParam := mux.Vars(r)["id"]
-	objID, err := primitive.ObjectIDFromHex(idParam)
-	if err != nil {
-		response.WithValidationError(w, r, "Invalid property ID")
-		return
-	}
 
-	property, err := h.Service.GetPropertyByID(objID.Hex())
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			response.WithNotFound(w, r, "Property not found")
-		} else {
-			response.WithInternalError(w, r, "Failed to fetch property: "+err.Error())
-		}
-		return
-	}
 
-	response.WithPayload(w, r, property)
-}
 
-// Update
 func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request) {
 	idParam := mux.Vars(r)["id"]
 	objID, err := primitive.ObjectIDFromHex(idParam)
@@ -137,7 +112,7 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Property updated successfully"})
 }
 
-// Delete
+
 func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request) {
 	idParam := mux.Vars(r)["id"]
 	objID, err := primitive.ObjectIDFromHex(idParam)
@@ -154,16 +129,7 @@ func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request)
 	response.WithMessage(w, r, "Property deleted successfully")
 }
 
-func (h *PropertyHandler) GetAllProperties(w http.ResponseWriter, r *http.Request) {
-	properties, err := h.Service.GetAllProperties(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(properties)
-}
 
 func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.Request) {
 	var dealerID primitive.ObjectID
@@ -216,136 +182,17 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 	response.WithPayload(w, r, properties)
 }
 
-func (h *PropertyHandler) GetPropertyByNumber(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	propertyNumberStr := vars["number"]
-
-	if propertyNumberStr == "" {
-		response.WithValidationError(w, r, "Property number is required")
-		return
-	}
-
-	propertyNumber, err := strconv.ParseInt(propertyNumberStr, 10, 64)
+func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) {
+	properties, err := h.Service.GetProperties(r.Context())
 	if err != nil {
-		response.WithValidationError(w, r, "Invalid property number")
+		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	property, err := h.Service.GetPropertyByNumber(r.Context(), propertyNumber)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			response.WithNotFound(w, r, "Property not found")
-		} else {
-			response.WithInternalError(w, r, "Failed to fetch property: "+err.Error())
-		}
-		return
-	}
-
-	response.WithPayload(w, r, property)
+	response.WithPayload(w, r, properties)
 }
 
-func (h *PropertyHandler) SearchProperties(w http.ResponseWriter, r *http.Request) {
-	filter := bson.M{}
 
-	// 🔹 Parse query params
-	queryParams := r.URL.Query()
-	for key, values := range queryParams {
-		if len(values) == 0 || values[0] == "" {
-			continue
-		}
-		val := values[0]
 
-		switch key {
-		case "name":
-			// Regex search
-			filter["name"] = bson.M{"$regex": primitive.Regex{Pattern: val, Options: "i"}}
 
-		case "location":
-			filter["location"] = val
 
-		case "sub_location":
-			filter["sub_location"] = val
 
-		case "dealer_id":
-			if objectID, err := primitive.ObjectIDFromHex(val); err == nil {
-				filter["dealer_id"] = objectID
-			}
-
-		case "sold":
-			// sold=true / sold=false
-			if val == "true" {
-				filter["sold"] = true
-			} else if val == "false" {
-				filter["sold"] = bson.M{"$ne": true} // either false or not set
-			}
-
-		case "min_price":
-			if price, err := strconv.Atoi(val); err == nil {
-				// merge with existing condition
-				utils.MergeRangeCondition(filter, "sold_price", "$gte", price)
-			}
-
-		case "max_price":
-			if price, err := strconv.Atoi(val); err == nil {
-				utils.MergeRangeCondition(filter, "sold_price", "$lte", price)
-			}
-
-		case "status":
-			// converted, available, etc.
-			filter["status"] = val
-		}
-	}
-
-	// 🔹 Pagination
-	page := 1
-	limit := 20
-	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
-		page = p
-	}
-	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
-		limit = l
-	}
-
-	// 🔹 Fields
-	fieldsParam := r.URL.Query().Get("fields")
-	var fields []string
-	if fieldsParam != "" {
-		fields = strings.Split(fieldsParam, ",")
-	}
-
-	// 🔹 Search
-	properties, err := h.Service.SearchProperties(r.Context(), filter, page, limit, fields)
-	if err != nil {
-		http.Error(w, "Failed to search properties: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// 🔹 Response
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"properties": properties,
-	})
-}
-
-func (h *PropertyHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	propertyID := vars["id"]
-	if propertyID == "" {
-		http.Error(w, "Missing property ID", http.StatusBadRequest)
-		return
-	}
-
-	objID, err := primitive.ObjectIDFromHex(propertyID)
-	if err != nil {
-		http.Error(w, "Invalid property ID", http.StatusBadRequest)
-		return
-	}
-
-	property, err := h.Service.GetByID(r.Context(), objID.Hex())
-	if err != nil {
-		http.Error(w, "Failed to fetch property", http.StatusInternalServerError)
-		return
-	}
-
-	response.WithPayload(w, r, property)
-}
