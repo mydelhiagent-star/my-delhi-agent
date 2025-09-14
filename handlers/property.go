@@ -107,13 +107,19 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 	}
 
 	
+    
+
+	if err := validate.ValidatePropertyUpdate(updates); err != nil {
+		response.WithValidationError(w, r, err.Error())
+		return
+	}
 
 	if err := h.Service.UpdateProperty(objID.Hex(), updates); err != nil {
 		http.Error(w, "Failed to update property", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "Property updated successfully"})
+	response.WithMessage(w, r, "Property updated successfully")
 }
 
 
@@ -201,6 +207,7 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
         return
     }
     
+
     
     if params.Page == nil {
 		page := 1
