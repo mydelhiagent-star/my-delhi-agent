@@ -68,23 +68,12 @@ func (s *DealerService) LoginDealer(ctx context.Context, phone, password string)
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt: jwt.NewNumericDate(time.Now()), // unique timestamp
 			ID:       uuid.New().String(),            // unique jti
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(s.JWTSecret))
-	if err != nil {
-		return "", err
-	}
-	
-	tokenModel := models.Token{
-		Token:     tokenString,
-		UserID:    dbUser.ID,
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-	}
-	
-	err = s.TokenRepo.Create(ctx, tokenModel)
 	if err != nil {
 		return "", err
 	}

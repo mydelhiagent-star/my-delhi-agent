@@ -100,20 +100,7 @@ func (r *MongoPropertyRepository) GetByDealer(ctx context.Context, dealerID stri
 	return converters.ToDomainPropertySlice(mongoProperties), nil
 }
 
-func (r *MongoPropertyRepository) GetAll(ctx context.Context) ([]models.Property, error) {
-	cursor, err := r.propertyCollection.Find(ctx, bson.M{})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
 
-	var mongoProperties []mongoModels.Property
-	if err := cursor.All(ctx, &mongoProperties); err != nil {
-		return nil, err
-	}
-
-	return converters.ToDomainPropertySlice(mongoProperties), nil
-}
 
 func (r *MongoPropertyRepository) Update(ctx context.Context, id string, updates models.PropertyUpdate) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
@@ -181,32 +168,18 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 	return result.Value, nil
 }
 
-func (r *MongoPropertyRepository) GetByNumber(ctx context.Context, propertyNumber int64) (models.Property, error) {
-	var mongoProperty mongoModels.Property
-	err := r.propertyCollection.FindOne(ctx, bson.M{"property_number": propertyNumber, "is_deleted": false}).Decode(&mongoProperty)
-	if err != nil {
-		return models.Property{}, err
-	}
 
-	return converters.ToDomainProperty(mongoProperty), nil
-}
 
-func (r *MongoPropertyRepository) Search(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Property, error) {
+func (r *MongoPropertyRepository) GetProperties(ctx context.Context, filters map[string]interface{}, page, limit int) ([]models.Property, error) {
+	filter := bson.M{}
 	skip := (page - 1) * limit
+	opts := options.Find().
+		SetSort(bson.M{"created_at": -1}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit)).
+		SetBatchSize(100)
 
-	// Convert map[string]interface{} to bson.M
-	bsonFilter := bson.M{}
-	for k, v := range filter {
-		bsonFilter[k] = v
-	}
-
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bsonFilter}},
-		{{Key: "$skip", Value: int64(skip)}},
-		{{Key: "$limit", Value: int64(limit)}},
-	}
-
-	cursor, err := r.propertyCollection.Aggregate(ctx, pipeline)
+	cursor, err := r.propertyCollection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}

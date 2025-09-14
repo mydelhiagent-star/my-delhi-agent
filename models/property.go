@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// PropertyData represents a database-agnostic property model
+
 type Property struct {
 	ID              string    `json:"id"`
 	PropertyNumber  int64     `json:"property_number"`
@@ -51,4 +51,25 @@ type PropertyUpdate struct {
 	Bathrooms       *int       `json:"bathrooms,omitempty"`
 	PropertyType    *string    `json:"property_type,omitempty"`
 	UpdatedAt       *time.Time `json:"updated_at,omitempty"`
+}
+
+type PropertyQueryParams struct {
+    Title           *string  `query:"title"`
+    Description     *string  `query:"description"`
+    Location        *string  `query:"location"`
+    SubLocation     *string  `query:"sub_location"`
+    PropertyType    *string  `query:"property_type"`
+    OwnerName       *string  `query:"owner_name"`
+    OwnerPhone      *string  `query:"owner_phone"`
+    NearestLandmark *string  `query:"nearest_landmark"`
+    DealerID        *string  `query:"dealer_id"`
+    Sold            *bool    `query:"sold"`
+    IsDeleted       *bool    `query:"is_deleted"`
+    Area            *int     `query:"area"`
+    Bedrooms        *int     `query:"bedrooms"`
+    Bathrooms       *int     `query:"bathrooms"`
+    MinPrice        *float64 `query:"min_price"`
+    MaxPrice        *float64 `query:"max_price"`
+    Page            *int     `query:"page"`
+    Limit           *int     `query:"limit"`
 }

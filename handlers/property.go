@@ -2,17 +2,19 @@ package handlers
 
 import (
 	"encoding/json"
-	"net/http"
-	"strconv"
-	"time"
+	"myapp/constants"
 	"myapp/middlewares"
 	"myapp/models"
 	"myapp/response"
 	"myapp/services"
+	"myapp/utils"
 	"myapp/validate"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	
 )
 
 type PropertyHandler struct {
@@ -104,6 +106,8 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	
+
 	if err := h.Service.UpdateProperty(objID.Hex(), updates); err != nil {
 		http.Error(w, "Failed to update property", http.StatusInternalServerError)
 		return
@@ -182,13 +186,42 @@ func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.R
 	response.WithPayload(w, r, properties)
 }
 
+// handlers/property.go - UPDATED
 func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) {
-	properties, err := h.Service.GetProperties(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
-		return
+    role, _ := r.Context().Value(middlewares.UserRoleKey).(string)
+    if !constants.IsValidRole(role) {
+        http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
+        return
+    }
+    
+   
+    var params models.PropertyQueryParams
+    if err := utils.ParseQueryParams(r, &params); err != nil {
+        http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    
+    if params.Page == nil {
+		page := 1
+		params.Page = &page
 	}
-	response.WithPayload(w, r, properties)
+	if params.Limit == nil {
+		limit := 20
+		params.Limit = &limit
+	}
+    
+   
+    filters := utils.BuildFilters(params)
+    
+  
+    properties, err := h.Service.GetProperties(r.Context(), filters, *params.Page, *params.Limit)
+    if err != nil {
+        http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    response.WithPayload(w, r, properties)
 }
 
 
