@@ -9,7 +9,6 @@ type DealerClientRepository interface {
 	Create(ctx context.Context, dealerClient models.DealerClient) (string, error)
 	GetByID(ctx context.Context, id string) (models.DealerClient, error)
 	GetByDealerID(ctx context.Context, dealerID string) ([]models.DealerClient, error)
-	GetByPropertyID(ctx context.Context, propertyID string) ([]models.DealerClient, error)
 	GetAll(ctx context.Context) ([]models.DealerClient, error)
 	Update(ctx context.Context, id string, updates map[string]interface{}) error
 	Delete(ctx context.Context, id string) error

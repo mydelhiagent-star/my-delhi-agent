@@ -57,7 +57,11 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 }
 
 func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerID string) ([]models.DealerClient, error) {
-	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"dealer_id": dealerID})
+	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
+    if err != nil {
+        return nil, err
+    }
+	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"dealer_id": dealerObjectID})
 	if err != nil {
 		return nil, err
 	}
@@ -70,23 +74,7 @@ func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerI
 	return dealerClients, nil
 }
 
-func (r *MongoDealerClientRepository) GetByPropertyID(ctx context.Context, propertyID string) ([]models.DealerClient, error) {
-	propertyObjectID, err := primitive.ObjectIDFromHex(propertyID)
-	if err != nil {
-		return nil, err
-	}
-	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"property_id": propertyObjectID})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
 
-	var dealerClients []models.DealerClient
-	if err := cursor.All(ctx, &dealerClients); err != nil {
-		return nil, err
-	}
-	return dealerClients, nil
-}
 
 func (r *MongoDealerClientRepository) GetAll(ctx context.Context) ([]models.DealerClient, error) {
 	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{})

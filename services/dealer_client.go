@@ -30,8 +30,8 @@ func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClie
 	return s.Repo.Create(ctx, dealerClient)
 }
 
-func (s *DealerClientService) GetDealerClientByPropertyID(ctx context.Context, dealerID string, propertyID string) ([]models.DealerClient, error) {
-	return s.Repo.GetByPropertyID(ctx, propertyID)
+func (s *DealerClientService) GetDealerClient(ctx context.Context, dealerID string) ([]models.DealerClient, error) {
+	return s.Repo.GetByDealerID(ctx, dealerID)
 }
 
 func (s *DealerClientService) GetDealerClientsByDealerID(ctx context.Context, dealerID string) ([]models.DealerClient, error) {

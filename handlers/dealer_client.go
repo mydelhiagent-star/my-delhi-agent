@@ -47,25 +47,14 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 	})
 }
 
-func (h *DealerClientHandler) GetDealerClientByPropertyID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	propertyID := vars["propertyID"]
-	if propertyID == "" {
-		http.Error(w, "Missing property ID", http.StatusBadRequest)
-		return
-	}
-	objID, err := primitive.ObjectIDFromHex(propertyID)
-	if err != nil {
-		http.Error(w, "Invalid property ID", http.StatusBadRequest)
-		return
-	}
+func (h *DealerClientHandler) GetDealerClient(w http.ResponseWriter, r *http.Request) {
 	dealerID := r.Context().Value(middlewares.UserIDKey).(string)
 	dealerIDObj, err := primitive.ObjectIDFromHex(dealerID)
 	if err != nil {
 		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 		return
 	}
-	dealerClients, err := h.Service.GetDealerClientByPropertyID(r.Context(), dealerIDObj.Hex(), objID.Hex())
+	dealerClients, err := h.Service.GetDealerClient(r.Context(), dealerIDObj.Hex())
 	if err != nil {
 		http.Error(w, "Failed to fetch dealer clients", http.StatusInternalServerError)
 		return
