@@ -9,7 +9,6 @@ type DealerClient struct {
 	Name       string    `json:"name"`
 	Phone      string    `json:"phone"`
 	Email      string    `json:"email"`
-	Status     string    `json:"status"`
 	Note       string    `json:"note"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
@@ -17,16 +16,16 @@ type DealerClient struct {
 }
 
 type DealerClientPropertyInterest struct {
-	ID         string    `json:"id"`
+	ID         string        `json:"id"`
 	DealerClientID string    `json:"dealer_client_id"`
-	PropertyID string    `json:"property_id"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	PropertyID string        `json:"property_id"`
+	Status     string        `json:"status"`
+	CreatedAt  time.Time     `json:"created_at"`
+	UpdatedAt  time.Time     `json:"updated_at"`
 }
 
 // Dealer client status constants
 const (
-	DealerClientStatusActive   = "active"
-	DealerClientStatusInactive = "inactive"
-	DealerClientStatusBlocked  = "blocked"
+	DealerClientStatusMarked   = "marked"
+	DealerClientStatusUnmarked = "unmarked"
 )

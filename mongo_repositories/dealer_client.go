@@ -28,18 +28,15 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 		return "", err
 	}
 
-	propertyObjectID, err := primitive.ObjectIDFromHex(dealerClient.PropertyID)
-	if err != nil {
-		return "", err
-	}
+	
 
 	mongoDealerClient := mongoModels.DealerClient{
 		DealerID:   dealerObjectID,
-		PropertyID: propertyObjectID,
 		Name:       dealerClient.Name,
 		Phone:      dealerClient.Phone,
 		Note:       dealerClient.Note,
-		Status:     dealerClient.Status,
+		CreatedAt: dealerClient.CreatedAt,
+		UpdatedAt: dealerClient.UpdatedAt,
 	}
 
 	result, err := r.dealerClientCollection.InsertOne(ctx, mongoDealerClient)
@@ -124,20 +121,16 @@ func (r *MongoDealerClientRepository) Delete(ctx context.Context, id string) err
 	return err
 }
 
-func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, propertyID string, phone string) (bool, error) {
+func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, phone string) (bool, error) {
 	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
 	if err != nil {
 		return false, err
 	}
 
-	propertyObjectID, err := primitive.ObjectIDFromHex(propertyID)
-	if err != nil {
-		return false, err
-	}
+	
 
 	filter := bson.M{
 		"dealer_id":   dealerObjectID,
-		"property_id": propertyObjectID,
 		"phone":       phone,
 	}
 

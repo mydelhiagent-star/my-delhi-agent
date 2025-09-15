@@ -13,6 +13,6 @@ type DealerClientRepository interface {
 	GetAll(ctx context.Context) ([]models.DealerClient, error)
 	Update(ctx context.Context, id string, updates map[string]interface{}) error
 	Delete(ctx context.Context, id string) error
-	CheckPhoneExistsForDealer(ctx context.Context, dealerID, propertyID, phone string) (bool, error)
+	CheckPhoneExistsForDealer(ctx context.Context, dealerID, phone string) (bool, error)
 	UpdateStatus(ctx context.Context, id string, status string) error
 }

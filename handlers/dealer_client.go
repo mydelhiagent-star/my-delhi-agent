@@ -17,11 +17,19 @@ type DealerClientHandler struct {
 }
 
 func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.Request) {
+	dealerID, _ := r.Context().Value(middlewares.UserIDKey).(string)
+	dealerIDObj, err := primitive.ObjectIDFromHex(dealerID)
+	if err != nil {
+		response.WithValidationError(w, r, "Invalid dealer ID")
+		return
+	}
 	var dealerClient models.DealerClient
 	if err := json.NewDecoder(r.Body).Decode(&dealerClient); err != nil {
 		response.WithError(w, r, "Invalid request body")
 		return
 	}
+	
+	dealerClient.DealerID = dealerIDObj.Hex()
 
 	id, err := h.Service.CreateDealerClient(r.Context(), dealerClient)
 	if err != nil {
@@ -99,7 +107,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	}
 
 	// Check if phone number already exists for this dealer (excluding current client)
-	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), currentClient.DealerID, currentClient.PropertyID, updateData.Phone)
+	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), currentClient.DealerID, updateData.Phone)
 	if err != nil {
 		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
 		return

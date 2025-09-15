@@ -1,4 +1,4 @@
-package models
+package mongo_models
 
 import (
 	"time"

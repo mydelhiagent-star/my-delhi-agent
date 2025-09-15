@@ -11,13 +11,13 @@ type DealerClientService struct {
 	Repo repositories.DealerClientRepository
 }
 
-func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, propertyID string, phone string) (bool, error) {
-	return s.Repo.CheckPhoneExistsForDealer(ctx, dealerID, propertyID, phone)
+func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, phone string) (bool, error) {
+	return s.Repo.CheckPhoneExistsForDealer(ctx, dealerID, phone)
 }
 
 func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClient models.DealerClient) (string, error) {
 	
-	exists, err := s.CheckPhoneExistsForDealer(ctx, dealerClient.DealerID, dealerClient.PropertyID, dealerClient.Phone)
+	exists, err := s.CheckPhoneExistsForDealer(ctx, dealerClient.DealerID, dealerClient.Phone)
 	if err != nil {
 		return "", err
 	}
@@ -25,8 +25,7 @@ func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClie
 		return "", errors.New("phone number already exists")
 	}
 
-	// Set default status
-	dealerClient.Status = "unmarked"
+	
 
 	return s.Repo.Create(ctx, dealerClient)
 }
