@@ -125,3 +125,4 @@ func ValidatePropertyUpdate(property models.PropertyUpdate) error {
 
 	return nil
 }
+

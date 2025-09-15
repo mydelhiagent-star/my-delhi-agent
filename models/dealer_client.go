@@ -13,6 +13,15 @@ type DealerClient struct {
 	Note       string    `json:"note"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
+	PropertyInterests []DealerClientPropertyInterest `json:"properties"`
+}
+
+type DealerClientPropertyInterest struct {
+	ID         string    `json:"id"`
+	DealerClientID string    `json:"dealer_client_id"`
+	PropertyID string    `json:"property_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 // Dealer client status constants

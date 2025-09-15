@@ -171,7 +171,7 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 
 
 func (r *MongoPropertyRepository) GetProperties(ctx context.Context, filters map[string]interface{}, page, limit int) ([]models.Property, error) {
-	filter := bson.M{}
+	filter := bson.M(filters)
 	skip := (page - 1) * limit
 	opts := options.Find().
 		SetSort(bson.M{"created_at": -1}).

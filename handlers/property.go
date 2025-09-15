@@ -10,7 +10,6 @@ import (
 	"myapp/utils"
 	"myapp/validate"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -141,60 +140,10 @@ func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request)
 
 
 
-func (h *PropertyHandler) GetPropertiesByDealer(w http.ResponseWriter, r *http.Request) {
-	var dealerID primitive.ObjectID
-	var err error
 
-	// Get dealer_id from query parameter
-	dealerIDParam := r.URL.Query().Get("dealer_id")
-
-	if dealerIDParam != "" {
-		// Admin or external call with dealer_id in query
-		dealerID, err = primitive.ObjectIDFromHex(dealerIDParam)
-		if err != nil {
-			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
-			return
-		}
-	} else {
-		// No dealer_id in query → must be dealer calling their own
-		role, _ := r.Context().Value(middlewares.UserRoleKey).(string)
-		userIDStr, _ := r.Context().Value(middlewares.UserIDKey).(string)
-
-		if role != "dealer" {
-			http.Error(w, "Dealer ID is required", http.StatusBadRequest)
-			return
-		}
-
-		dealerID, err = primitive.ObjectIDFromHex(userIDStr)
-		if err != nil {
-			http.Error(w, "Invalid dealer ID from token", http.StatusUnauthorized)
-			return
-		}
-	}
-
-	// ← PAGINATION parameters
-	page := 1
-	limit := 12
-	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
-		page = p
-	}
-	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
-		limit = l
-	}
-
-	// ← FETCH properties with pagination
-	properties, err := h.Service.GetPropertiesByDealer(r.Context(), dealerID.Hex(), page, limit)
-	if err != nil {
-		http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	response.WithPayload(w, r, properties)
-}
-
-// handlers/property.go - UPDATED
 func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) {
     role, _ := r.Context().Value(middlewares.UserRoleKey).(string)
+	dealerID, _ := r.Context().Value(middlewares.UserIDKey).(string)
     if !constants.IsValidRole(role) {
         http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
         return
@@ -206,8 +155,10 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
         http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
         return
     }
-    
-
+	if role == constants.Dealer {
+		params.DealerID = &dealerID
+	}
+	
     
     if params.Page == nil {
 		page := 1
@@ -229,6 +180,8 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
     }
 
     response.WithPayload(w, r, properties)
+
+	
 }
 
 

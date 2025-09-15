@@ -2,12 +2,12 @@ package services
 
 import (
 	"context"
-	"encoding/json"
+	
 	"fmt"
 	"myapp/models"
 	"myapp/repositories"
 	"myapp/utils"
-	"time"
+	
 
 	"github.com/go-redis/redis/v8"
 )
@@ -48,23 +48,19 @@ func (s *PropertyService) CreateProperty(ctx context.Context, property models.Pr
 }
 
 
-
-
-
 func (s *PropertyService) UpdateProperty(id string, updates models.PropertyUpdate) error {
-	// Get property first to find dealer ID for cache invalidation
+	
 	property, err := s.Repo.GetByID(context.Background(), id)
 	if err != nil {
 		return err
 	}
 
-	// Update the property
+	
 	err = s.Repo.Update(context.Background(), id, updates)
 	if err != nil {
 		return err
 	}
 
-	// Invalidate dealer's property cache
 	if s.RedisClient != nil {
 		s.InvalidateDealerPropertyCache(property.DealerID)
 	}
@@ -73,19 +69,16 @@ func (s *PropertyService) UpdateProperty(id string, updates models.PropertyUpdat
 }
 
 func (s *PropertyService) DeleteProperty(id string) error {
-	// Get property first to find dealer ID for cache invalidation
 	property, err := s.Repo.GetByID(context.Background(), id)
 	if err != nil {
 		return err
 	}
 
-	// Delete the property
 	err = s.Repo.Delete(context.Background(), id)
 	if err != nil {
 		return err
 	}
 
-	// Invalidate dealer's property cache
 	if s.RedisClient != nil {
 		s.InvalidateDealerPropertyCache(property.DealerID)
 	}
@@ -95,39 +88,7 @@ func (s *PropertyService) DeleteProperty(id string) error {
 
 
 
-func (s *PropertyService) GetPropertiesByDealer(ctx context.Context, dealerID string, page, limit int) ([]models.Property, error) {
-	// Validate inputs
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 12 // Default limit
-	}
 
-	redisKey := fmt.Sprintf("properties_by_dealer:%s:page:%d:limit:%d", dealerID, page, limit)
-	if s.RedisClient != nil {
-		cached, err := s.RedisClient.Get(ctx, redisKey).Result()
-		if err == nil {
-			var properties []models.Property
-			if json.Unmarshal([]byte(cached), &properties) == nil {
-				return properties, nil
-			}
-		}
-	}
-
-	properties, err := s.Repo.GetByDealer(ctx, dealerID, page, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	if s.RedisClient != nil {
-		if data, err := json.Marshal(properties); err == nil {
-			s.RedisClient.Set(ctx, redisKey, data, 30*time.Minute)
-		}
-	}
-
-	return properties, nil
-}
 
 
 
@@ -145,6 +106,5 @@ func (s *PropertyService) InvalidateDealerPropertyCache(dealerID string) {
 }
 
 func (s *PropertyService) GetProperties(ctx context.Context, filters map[string]interface{}, page, limit int) ([]models.Property, error) {
-
 	return s.Repo.GetProperties(ctx, filters, page, limit)
 }

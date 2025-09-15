@@ -1,6 +1,11 @@
+// utils/filter_builder.go
 package utils
 
-import "reflect"
+import (
+    "reflect"
+    "strings"
+    "go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 func BuildFilters(params interface{}) map[string]interface{} {
     filters := make(map[string]interface{})
@@ -12,7 +17,6 @@ func BuildFilters(params interface{}) map[string]interface{} {
         field := t.Field(i)
         fieldValue := v.Field(i)
         
-        
         if fieldValue.IsNil() {
             continue
         }
@@ -23,11 +27,44 @@ func BuildFilters(params interface{}) map[string]interface{} {
         }
         
         if shouldIncludeField(fieldValue, queryTag) {
-            filters[queryTag] = fieldValue.Elem().Interface()
+            value := fieldValue.Elem().Interface()
+            
+            // ✅ Smart ID detection - no hardcoding
+            if isIDField(queryTag) {
+                value = convertToObjectID(value)
+            }
+
+			mongoFieldName := getMongoFieldName(queryTag)
+            filters[mongoFieldName] = value
+
+			
         }
     }
     
     return filters
+}
+
+// ✅ Generic ID detection
+func isIDField(fieldName string) bool {
+    // Check if field name ends with "_id" or is "id"
+    return fieldName == "id" || strings.HasSuffix(fieldName, "_id")
+}
+
+func getMongoFieldName(queryTag string) string {
+    if queryTag == "id" {
+        return "_id"  // Frontend "id" -> MongoDB "_id"
+    }
+    return queryTag  // Other fields stay the same
+}
+
+// ✅ Generic ObjectID conversion
+func convertToObjectID(value interface{}) interface{} {
+    if str, ok := value.(string); ok {
+        if objectID, err := primitive.ObjectIDFromHex(str); err == nil {
+            return objectID
+        }
+    }
+    return value // Return original if conversion fails
 }
 
 func shouldIncludeField(fieldValue reflect.Value, queryTag string) bool {

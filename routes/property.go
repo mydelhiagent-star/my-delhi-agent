@@ -13,12 +13,12 @@ func RegisterPropertyRoutes(r *mux.Router, h *handlers.PropertyHandler, jwtSecre
     propertyRouter.Use(middlewares.JWTAuth(jwtSecret))
     
     // ✅ Single endpoint with role-based access control
-    propertyRouter.HandleFunc("/", h.GetProperties).Methods("GET")
+    propertyRouter.HandleFunc("", h.GetProperties).Methods("GET")
     
     // ✅ Role-specific operations
     dealerRouter := propertyRouter.PathPrefix("/dealer").Subrouter()
     dealerRouter.Use(middlewares.RequireRole("dealer"))
-    dealerRouter.HandleFunc("/", h.CreateProperty).Methods("POST")
+    dealerRouter.HandleFunc("", h.CreateProperty).Methods("POST")
     dealerRouter.HandleFunc("/{id}", h.UpdateProperty).Methods("PUT")
     dealerRouter.HandleFunc("/{id}", h.DeleteProperty).Methods("DELETE")
 }

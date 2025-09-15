@@ -54,6 +54,7 @@ type PropertyUpdate struct {
 }
 
 type PropertyQueryParams struct {
+	ID              *string  `query:"id"`
     Title           *string  `query:"title"`
     Description     *string  `query:"description"`
     Location        *string  `query:"location"`
