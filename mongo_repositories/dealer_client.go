@@ -2,6 +2,7 @@ package mongo_repositories
 
 import (
 	"context"
+	"myapp/converters"
 	"myapp/models"
 	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
@@ -67,11 +68,11 @@ func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerI
 	}
 	defer cursor.Close(ctx)
 
-	var dealerClients []models.DealerClient
-	if err := cursor.All(ctx, &dealerClients); err != nil {
+	var mongoDealerClients []mongoModels.DealerClient
+	if err := cursor.All(ctx, &mongoDealerClients); err != nil {
 		return nil, err
 	}
-	return dealerClients, nil
+	return converters.ToDomainDealerClientSlice(mongoDealerClients), nil
 }
 
 
