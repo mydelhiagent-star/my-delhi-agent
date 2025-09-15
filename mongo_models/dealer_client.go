@@ -7,22 +7,20 @@ import (
 )
 
 type DealerClient struct {
-	ID       primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	DealerID primitive.ObjectID `json:"dealer_id" bson:"dealer_id"`
-	Name       string             `json:"name" bson:"name"`
-	Phone      string             `json:"phone" bson:"phone"`
-	Note       string             `json:"note" bson:"note"`
-	PropertyInterests []DealerClientPropertyInterest `json:"properties" bson:"properties"`
-	CreatedAt  time.Time `json:"created_at" bson:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at" bson:"updated_at"`
-
+	ID                primitive.ObjectID             `bson:"_id,omitempty"`
+	DealerID          primitive.ObjectID             `bson:"dealer_id"`
+	Name              string                         `bson:"name"`
+	Phone             string                         `bson:"phone"`
+	Note              string                         `bson:"note"`
+	PropertyInterests []DealerClientPropertyInterest `bson:"properties,omitempty"`
+	CreatedAt         time.Time                      `bson:"created_at"`
+	UpdatedAt         time.Time                      `bson:"updated_at"`
 }
 
 type DealerClientPropertyInterest struct {
-	ID         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	DealerClientID primitive.ObjectID `json:"dealer_client_id" bson:"dealer_client_id"`
-	PropertyID primitive.ObjectID `json:"property_id" bson:"property_id"`
-	Status     string             `json:"status" bson:"status"`
-	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt  time.Time          `json:"updated_at" bson:"updated_at"`
+	ID             primitive.ObjectID `bson:"_id,omitempty"`
+	PropertyID     primitive.ObjectID `bson:"property_id"`
+	Status         string             `bson:"status"`
+	CreatedAt      time.Time          `bson:"created_at"`
+	UpdatedAt      time.Time          `bson:"updated_at"`
 }

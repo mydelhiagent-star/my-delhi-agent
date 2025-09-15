@@ -17,7 +17,6 @@ type DealerClient struct {
 
 type DealerClientPropertyInterest struct {
 	ID         string        `json:"id"`
-	DealerClientID string    `json:"dealer_client_id"`
 	PropertyID string        `json:"property_id"`
 	Status     string        `json:"status"`
 	CreatedAt  time.Time     `json:"created_at"`
