@@ -6,10 +6,12 @@ import (
 	"myapp/models"
 	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
+	"myapp/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoDealerClientRepository struct {
@@ -57,12 +59,16 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 	return dealerClient, nil
 }
 
-func (r *MongoDealerClientRepository) GetByDealerID(ctx context.Context, dealerID string) ([]models.DealerClient, error) {
-	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
-    if err != nil {
-        return nil, err
-    }
-	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{"dealer_id": dealerObjectID})
+func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams) ([]models.DealerClient, error) {
+	filter := utils.BuildMongoFilter(params)
+
+	opts := options.Find().
+		SetSort(bson.M{"created_at": -1}).
+		SetSkip(int64(*params.Page - 1)).
+		SetLimit(int64(*params.Limit)).
+		SetBatchSize(100)
+
+	cursor, err := r.dealerClientCollection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}

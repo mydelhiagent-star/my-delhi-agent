@@ -28,7 +28,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 		response.WithError(w, r, "Invalid request body")
 		return
 	}
-	
+
 	dealerClient.DealerID = dealerIDObj.Hex()
 
 	id, err := h.Service.CreateDealerClient(r.Context(), dealerClient)
@@ -47,14 +47,20 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 	})
 }
 
-func (h *DealerClientHandler) GetDealerClient(w http.ResponseWriter, r *http.Request) {
+func (h *DealerClientHandler) GetDealerClients(w http.ResponseWriter, r *http.Request) {
 	dealerID := r.Context().Value(middlewares.UserIDKey).(string)
-	dealerIDObj, err := primitive.ObjectIDFromHex(dealerID)
+	_, err := primitive.ObjectIDFromHex(dealerID)
 	if err != nil {
 		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
 		return
 	}
-	dealerClients, err := h.Service.GetDealerClient(r.Context(), dealerIDObj.Hex())
+	var params models.DealerClientQueryParams
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	dealerClients, err := h.Service.GetDealerClients(r.Context(), params)
 	if err != nil {
 		http.Error(w, "Failed to fetch dealer clients", http.StatusInternalServerError)
 		return

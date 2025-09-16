@@ -54,7 +54,7 @@ type PropertyUpdate struct {
 }
 
 type PropertyQueryParams struct {
-	ID              *string  `query:"id"`
+	ID              *string  `query:"id" mongo:"_id" convert:"objectid"`
     Title           *string  `query:"title"`
     Description     *string  `query:"description"`
     Location        *string  `query:"location"`
@@ -63,7 +63,7 @@ type PropertyQueryParams struct {
     OwnerName       *string  `query:"owner_name"`
     OwnerPhone      *string  `query:"owner_phone"`
     NearestLandmark *string  `query:"nearest_landmark"`
-    DealerID        *string  `query:"dealer_id"`
+    DealerID        *string  `query:"dealer_id" mongo:"dealer_id" convert:"objectid"`
     Sold            *bool    `query:"sold"`
     IsDeleted       *bool    `query:"is_deleted"`
     Area            *int     `query:"area"`
@@ -71,6 +71,6 @@ type PropertyQueryParams struct {
     Bathrooms       *int     `query:"bathrooms"`
     MinPrice        *float64 `query:"min_price"`
     MaxPrice        *float64 `query:"max_price"`
-    Page            *int     `query:"page"`
-    Limit           *int     `query:"limit"`
+	Page            *int     `query:"page" pagination:"true"`
+    Limit           *int     `query:"limit" pagination:"true"`
 }

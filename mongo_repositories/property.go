@@ -7,6 +7,7 @@ import (
 	"myapp/models"
 	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
+	"myapp/utils"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -170,8 +171,9 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 
 
 
-func (r *MongoPropertyRepository) GetProperties(ctx context.Context, filters map[string]interface{}, page, limit int) ([]models.Property, error) {
-	filter := bson.M(filters)
+func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int) ([]models.Property, error) {
+	filter := utils.BuildMongoFilter(params)
+	
 	skip := (page - 1) * limit
 	opts := options.Find().
 		SetSort(bson.M{"created_at": -1}).

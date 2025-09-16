@@ -31,6 +31,26 @@ type DealerClientPropertyInterest struct {
 	UpdatedAt  time.Time     `json:"updated_at"`
 }
 
+type DealerClientQueryParams struct {
+	ID              *string  `query:"id" mongo:"_id" convert:"objectid"`
+	DealerID        *string  `query:"dealer_id" mongo:"dealer_id" convert:"objectid"`
+	Name            *string  `query:"name"`
+	Phone           *string  `query:"phone"`
+	Note            *string  `query:"note"`
+
+	PropertyInterestsID         *string `query:"properties_id" mongo:"properties._id" convert:"objectid"`
+    PropertyInterestsPropertyID *string `query:"properties_property_id" mongo:"properties.property_id" convert:"objectid"`
+    PropertyInterestsStatus     *string `query:"properties_status" mongo:"properties.status"`
+    PropertyInterestsCreatedAt  *time.Time `query:"properties_created_at" mongo:"properties.created_at" convert:"date"`
+    PropertyInterestsUpdatedAt  *time.Time `query:"properties_updated_at" mongo:"properties.updated_at" convert:"date"`
+	
+	CreatedAt       *time.Time `query:"created_at" mongo:"created_at" convert:"date"`
+	UpdatedAt       *time.Time `query:"updated_at" mongo:"updated_at" convert:"date"`
+	
+	Page            *int     `query:"page" pagination:"true"`
+    Limit           *int     `query:"limit" pagination:"true"`
+}
+
 // Dealer client status constants
 const (
 	DealerClientStatusMarked   = "marked"
