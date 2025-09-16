@@ -173,10 +173,10 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 
 func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int) ([]models.Property, error) {
 	filter := utils.BuildMongoFilter(params)
-	
+	fmt.Println(filter)
 	skip := (page - 1) * limit
 	opts := options.Find().
-		SetSort(bson.M{"created_at": -1}).
+		SetSort(bson.M{params.Sort: -1}).
 		SetSkip(int64(skip)).
 		SetLimit(int64(limit)).
 		SetBatchSize(100)

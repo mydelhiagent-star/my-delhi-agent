@@ -61,6 +61,10 @@ func (h *DealerClientHandler) GetDealerClients(w http.ResponseWriter, r *http.Re
         return
     }
 
+	params.DealerID = &dealerID
+
+	
+
 	dealerClients, err := h.Service.GetDealerClients(r.Context(), params)
 	if err != nil {
 		http.Error(w, "Failed to fetch dealer clients", http.StatusInternalServerError)

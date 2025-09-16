@@ -20,8 +20,10 @@ func BuildMongoFilter(params interface{}) bson.M {
     
     for i := 0; i < t.NumField(); i++ {
         field := t.Field(i)
+        if field.Anonymous{
+            continue
+        }
         fieldValue := v.Field(i)
-        
         if fieldValue.IsNil() {
             continue
         }

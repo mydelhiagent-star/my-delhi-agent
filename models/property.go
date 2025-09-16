@@ -71,6 +71,5 @@ type PropertyQueryParams struct {
     Bathrooms       *int     `query:"bathrooms"`
     MinPrice        *float64 `query:"min_price"`
     MaxPrice        *float64 `query:"max_price"`
-	Page            *int     `query:"page" pagination:"true"`
-    Limit           *int     `query:"limit" pagination:"true"`
+	BaseQueryParams
 }

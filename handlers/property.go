@@ -158,22 +158,14 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
 	if role == constants.Dealer {
 		params.DealerID = &dealerID
 	}
+
+	params.SetDefaults()
 	
     
-    if params.Page == nil {
-		page := 1
-		params.Page = &page
-	}
-	if params.Limit == nil {
-		limit := 20
-		params.Limit = &limit
-	}
-    
-   
-    
+
     
   
-    properties, err := h.Service.GetProperties(r.Context(), params, *params.Page, *params.Limit)
+    properties, err := h.Service.GetProperties(r.Context(), params, params.Page, params.Limit)
     if err != nil {
         http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
         return

@@ -60,12 +60,13 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 }
 
 func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams) ([]models.DealerClient, error) {
+	params.SetDefaults()
 	filter := utils.BuildMongoFilter(params)
 
 	opts := options.Find().
 		SetSort(bson.M{"created_at": -1}).
-		SetSkip(int64(*params.Page - 1)).
-		SetLimit(int64(*params.Limit)).
+		SetSkip(int64(params.Page - 1)).
+		SetLimit(int64(params.Limit)).
 		SetBatchSize(100)
 
 	cursor, err := r.dealerClientCollection.Find(ctx, filter, opts)
