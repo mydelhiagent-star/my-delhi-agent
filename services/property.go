@@ -106,5 +106,6 @@ func (s *PropertyService) InvalidateDealerPropertyCache(dealerID string) {
 }
 
 func (s *PropertyService) GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int) ([]models.Property, error) {
+	params.SetDefaults()
 	return s.Repo.GetProperties(ctx, params, page, limit)
 }

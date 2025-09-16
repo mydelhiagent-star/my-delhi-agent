@@ -159,11 +159,6 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
 		params.DealerID = &dealerID
 	}
 
-	params.SetDefaults()
-	
-    
-
-    
   
     properties, err := h.Service.GetProperties(r.Context(), params, params.Page, params.Limit)
     if err != nil {

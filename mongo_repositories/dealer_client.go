@@ -60,7 +60,7 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 }
 
 func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams) ([]models.DealerClient, error) {
-	params.SetDefaults()
+	
 	filter := utils.BuildMongoFilter(params)
 
 	opts := options.Find().
