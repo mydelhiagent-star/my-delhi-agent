@@ -6,6 +6,7 @@ import (
 	"myapp/models"
 	"myapp/response"
 	"myapp/services"
+	"myapp/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -55,10 +56,10 @@ func (h *DealerClientHandler) GetDealerClients(w http.ResponseWriter, r *http.Re
 		return
 	}
 	var params models.DealerClientQueryParams
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+	if err := utils.ParseQueryParams(r, &params); err != nil {
+        http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
+        return
+    }
 
 	dealerClients, err := h.Service.GetDealerClients(r.Context(), params)
 	if err != nil {
