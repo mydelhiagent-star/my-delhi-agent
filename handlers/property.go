@@ -70,11 +70,7 @@ func (h *PropertyHandler) CreateProperty(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	for i, videoKey := range property.Videos {
-		if videoKey != "" {
-			property.Videos[i] = publicURLPrefix + videoKey
-		}
-	}
+	
 
 	id, err := h.Service.CreateProperty(r.Context(), property)
 	if err != nil {
