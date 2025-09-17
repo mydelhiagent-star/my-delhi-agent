@@ -21,7 +21,6 @@ type MongoPropertyRepository struct {
 	propertyCollection *mongo.Collection
 	counterCollection  *mongo.Collection
 	redisClient        *redis.Client
-	
 }
 
 func NewMongoPropertyRepository(propertyCollection, counterCollection *mongo.Collection, redisClient *redis.Client) repositories.PropertyRepository {
@@ -101,8 +100,6 @@ func (r *MongoPropertyRepository) GetByDealer(ctx context.Context, dealerID stri
 	return converters.ToDomainPropertySlice(mongoProperties), nil
 }
 
-
-
 func (r *MongoPropertyRepository) Update(ctx context.Context, id string, updates models.PropertyUpdate) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -169,22 +166,25 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 	return result.Value, nil
 }
 
-
-
 func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params models.PropertyQueryParams, fields []string) ([]models.Property, error) {
 	filter := utils.BuildMongoFilter(params)
-	
-	skip := (*params.Page - 1) * *params.Limit
-	opts := options.Find().
-		SetSort(bson.M{*params.Sort: *params.Order == "desc" ? -1 : 1}).
-		SetSkip(int64(skip)).
-		SetLimit(int64(*params.Limit)).
-		SetBatchSize(100)
 
-    if len(fields) > 0 {
-		opts.SetProjection(utils.BuildMongoProjection(fields))
+	skip := (*params.Page - 1) * *params.Limit
+	limit := *params.Limit
+	sortValue := 1
+	if *params.Order == "desc" {
+		sortValue = -1
 	}
 
+	opts := options.Find().
+		SetSort(bson.M{*params.Sort: sortValue}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit)).
+		SetBatchSize(100)
+
+	if len(fields) > 0 {
+		opts.SetProjection(utils.BuildMongoProjection(fields))
+	}
 
 	cursor, err := r.propertyCollection.Find(ctx, filter, opts)
 	if err != nil {
@@ -198,6 +198,5 @@ func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params mode
 	}
 
 	return converters.ToDomainPropertySlice(mongoProperties), nil
-	
-	
+
 }
