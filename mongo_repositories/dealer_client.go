@@ -66,8 +66,8 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 
 	opts := options.Find().
 		SetSort(bson.M{"created_at": -1}).
-		SetSkip(int64(params.Page - 1)).
-		SetLimit(int64(params.Limit)).
+		SetSkip(int64(*params.Page - 1)).
+		SetLimit(int64(*params.Limit)).
 		SetBatchSize(100)
 	
 	if len(fields) > 0 {

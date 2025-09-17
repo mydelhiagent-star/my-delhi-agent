@@ -2,6 +2,7 @@ package utils
 
 import (
     "net/http"
+    "net/url"
     "reflect"
     "strconv"
 )
@@ -14,6 +15,41 @@ func ParseQueryParams(r *http.Request, params interface{}) error {
     for i := 0; i < t.NumField(); i++ {
         field := t.Field(i)
         fieldValue := v.Field(i)
+        
+        // ✅ Handle embedded structs (Google's approach)
+        if field.Anonymous {
+            if err := parseEmbeddedStruct(fieldValue, queryParams); err != nil {
+                return err
+            }
+            continue
+        }
+        
+        queryTag := field.Tag.Get("query")
+        if queryTag == "" {
+            continue
+        }
+        
+        value := queryParams.Get(queryTag)
+        if value == "" {
+            continue
+        }
+        
+        setPointerValue(fieldValue, value)
+    }
+    
+    return nil
+}
+
+// ✅ Google's pattern: Recursive parsing for embedded structs
+func parseEmbeddedStruct(structValue reflect.Value, queryParams url.Values) error {
+    if structValue.Kind() != reflect.Struct {
+        return nil
+    }
+    
+    structType := structValue.Type()
+    for i := 0; i < structType.NumField(); i++ {
+        field := structType.Field(i)
+        fieldValue := structValue.Field(i)
         
         queryTag := field.Tag.Get("query")
         if queryTag == "" {

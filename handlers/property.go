@@ -158,7 +158,7 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
 	}
 
   
-    properties, err := h.Service.GetProperties(r.Context(), params, params.Page, params.Limit, fields)
+    properties, err := h.Service.GetProperties(r.Context(), params, *params.Page, *params.Limit, fields)
     if err != nil {
         http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
         return
