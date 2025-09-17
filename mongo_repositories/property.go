@@ -171,14 +171,20 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 
 
 
-func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int) ([]models.Property, error) {
+func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int, fields []string) ([]models.Property, error) {
 	filter := utils.BuildMongoFilter(params)
+	
 	skip := (page - 1) * limit
 	opts := options.Find().
 		SetSort(bson.M{params.Sort: -1}).
 		SetSkip(int64(skip)).
 		SetLimit(int64(limit)).
 		SetBatchSize(100)
+
+    if len(fields) > 0 {
+		opts.SetProjection(utils.BuildMongoProjection(fields))
+	}
+
 
 	cursor, err := r.propertyCollection.Find(ctx, filter, opts)
 	if err != nil {
@@ -192,4 +198,6 @@ func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params mode
 	}
 
 	return converters.ToDomainPropertySlice(mongoProperties), nil
+	
+	
 }

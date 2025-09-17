@@ -3,6 +3,7 @@ package response
 import (
 	"encoding/json"
 	"fmt"
+	"myapp/utils"
 	"net/http"
 	"time"
 )
@@ -35,6 +36,10 @@ func newResponse(data interface{}, success bool, message string, statusCode int)
 
 // WithPayload sends successful response with data
 func WithPayload(w http.ResponseWriter, r *http.Request, data interface{}) {
+	fields := utils.ParseFieldSelection(r)
+	if len(fields) > 0 {
+		data = filterDataFields(data, fields)
+	} 
 	resp := newResponse(data, true, "", http.StatusOK)
 	writeResponse(w, resp)
 }

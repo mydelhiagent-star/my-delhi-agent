@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"myapp/constants"
 	"myapp/middlewares"
 	"myapp/models"
@@ -151,13 +152,14 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
         http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
         return
     }
-	params.SetDefaults()
+	fields := utils.ParseFieldSelection(r)
+	fmt.Println(fields)
 	if role == constants.Dealer {
 		params.DealerID = &dealerID
 	}
 
   
-    properties, err := h.Service.GetProperties(r.Context(), params, params.Page, params.Limit)
+    properties, err := h.Service.GetProperties(r.Context(), params, params.Page, params.Limit, fields)
     if err != nil {
         http.Error(w, "Failed to fetch properties: "+err.Error(), http.StatusInternalServerError)
         return

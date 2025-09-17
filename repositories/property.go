@@ -12,5 +12,5 @@ type PropertyRepository interface {
 	Update(ctx context.Context, id string, updates models.PropertyUpdate) error
 	Delete(ctx context.Context, id string) error
 	GetNextPropertyNumber(ctx context.Context) (int64, error)
-	GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int) ([]models.Property, error)
+	GetProperties(ctx context.Context, params models.PropertyQueryParams, page, limit int, fields []string) ([]models.Property, error)
 }
