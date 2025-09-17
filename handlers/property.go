@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"myapp/constants"
 	"myapp/middlewares"
 	"myapp/models"
@@ -153,7 +152,7 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
         return
     }
 	fields := utils.ParseFieldSelection(r)
-	fmt.Println(fields)
+
 	if role == constants.Dealer {
 		params.DealerID = &dealerID
 	}

@@ -44,7 +44,6 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 
 	response.WithPayload(w, r, map[string]interface{}{
 		"message": "Dealer client created successfully",
-		"id":      id,
 	})
 }
 
