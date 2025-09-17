@@ -20,6 +20,7 @@ type DealerClient struct {
 type DealerClientPropertyInterest struct {
 	ID             primitive.ObjectID `bson:"_id,omitempty"`
 	PropertyID     primitive.ObjectID `bson:"property_id"`
+	Note         string                 `bson:"note,omitempty"`
 	Status         string             `bson:"status"`
 	CreatedAt      time.Time          `bson:"created_at"`
 	UpdatedAt      time.Time          `bson:"updated_at"`

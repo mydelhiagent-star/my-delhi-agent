@@ -31,16 +31,13 @@ func BuildMongoFilter(params interface{}) bson.M {
         queryTag := field.Tag.Get("query")
         mongoTag := field.Tag.Get("mongo")
         convertTag := field.Tag.Get("convert")
-		paginationTag := field.Tag.Get("pagination")
+		
         
         if queryTag == "" {
             continue
         }
 
-		if paginationTag == "true"{
-			continue
-		}
-        
+		
         value := fieldValue.Elem().Interface()
         
         

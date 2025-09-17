@@ -147,3 +147,18 @@ func (r *MongoDealerClientRepository) UpdateStatus(ctx context.Context, id strin
 	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
 	return err
 }
+
+
+func (r *MongoDealerClientRepository) CreateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, dealerClientPropertyInterest models.DealerClientPropertyInterest) error {
+	objectID, err := primitive.ObjectIDFromHex(dealerClientID)
+	if err != nil {
+		return err
+	}
+	mongoDealerClientPropertyInterest := converters.ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest)
+
+	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, bson.M{"$addToSet": bson.M{"properties": mongoDealerClientPropertyInterest}})
+	if err != nil {
+		return err
+	}
+	return nil
+}

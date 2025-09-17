@@ -3,6 +3,8 @@ package converters
 import (
 	"myapp/models"
 	mongoModels "myapp/mongo_models"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func ToDomainDealerClient(mongoDealerClient mongoModels.DealerClient) models.DealerClient {
@@ -42,4 +44,19 @@ func ToDomainDealerClientPropertyInterest(mongoDealerClientPropertyInterest mong
 		CreatedAt: mongoDealerClientPropertyInterest.CreatedAt,
 		UpdatedAt: mongoDealerClientPropertyInterest.UpdatedAt,
 	}
+}
+
+
+func ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest models.DealerClientPropertyInterest) mongoModels.DealerClientPropertyInterest {
+    
+    propertyObjectID, _ := primitive.ObjectIDFromHex(dealerClientPropertyInterest.PropertyID)
+    createdAt, updatedAt := CreationTimestamps()
+    return mongoModels.DealerClientPropertyInterest{
+        ID:         primitive.NewObjectID(), 
+        PropertyID: propertyObjectID,       
+        Note:       dealerClientPropertyInterest.Note,
+        Status:     dealerClientPropertyInterest.Status,
+        CreatedAt:  createdAt,              
+        UpdatedAt:  updatedAt,             
+    }
 }

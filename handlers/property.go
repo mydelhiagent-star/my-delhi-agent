@@ -151,6 +151,7 @@ func (h *PropertyHandler) GetProperties(w http.ResponseWriter, r *http.Request) 
         http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
         return
     }
+	params.SetDefaults()
 	if role == constants.Dealer {
 		params.DealerID = &dealerID
 	}

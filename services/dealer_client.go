@@ -5,6 +5,7 @@ import (
 	"errors"
 	"myapp/models"
 	"myapp/repositories"
+	
 )
 
 type DealerClientService struct {
@@ -55,4 +56,9 @@ func (s *DealerClientService) GetDealerClientByID(ctx context.Context, id string
 
 func (s *DealerClientService) UpdateDealerClientStatus(ctx context.Context, id string, status string) error {
 	return s.Repo.UpdateStatus(ctx, id, status)
+}
+
+func (s *DealerClientService) CreateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, dealerClientPropertyInterest models.DealerClientPropertyInterest) error {
+	
+	return s.Repo.CreateDealerClientPropertyInterest(ctx, dealerClientID, dealerClientPropertyInterest)
 }

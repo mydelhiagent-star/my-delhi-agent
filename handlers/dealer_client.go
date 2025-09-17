@@ -152,7 +152,9 @@ func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.
 	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client deleted successfully"})
 }
 
-func (h *DealerClientHandler) UpdateDealerClientStatus(w http.ResponseWriter, r *http.Request) {
+
+
+func (h *DealerClientHandler) CreateDealerClientPropertyInterest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	dealerClientID := vars["dealerClientID"]
 	if dealerClientID == "" {
@@ -164,16 +166,15 @@ func (h *DealerClientHandler) UpdateDealerClientStatus(w http.ResponseWriter, r 
 		http.Error(w, "Invalid dealer client ID", http.StatusBadRequest)
 		return
 	}
-	var updateData struct {
-		Status string `json:"status"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+	var dealerClientPropertyInterest models.DealerClientPropertyInterest
+	if err := json.NewDecoder(r.Body).Decode(&dealerClientPropertyInterest); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	err = h.Service.UpdateDealerClientStatus(r.Context(), objID.Hex(), updateData.Status)
+	err = h.Service.CreateDealerClientPropertyInterest(r.Context(), objID.Hex(), dealerClientPropertyInterest)
 	if err != nil {
-		http.Error(w, "Failed to update dealer client status", http.StatusInternalServerError)
+		http.Error(w, "Failed to create dealer client property interest", http.StatusInternalServerError)
 		return
 	}
+	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client property interest created successfully"})
 }

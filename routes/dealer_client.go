@@ -14,5 +14,5 @@ func RegisterDealerClientRoutes(r *mux.Router, h *handlers.DealerClientHandler, 
 	dealerClientRouter.HandleFunc("", h.GetDealerClients).Methods("GET")
 	dealerClientRouter.HandleFunc("/{dealerClientID}", h.UpdateDealerClient).Methods("PUT")
 	dealerClientRouter.HandleFunc("/{dealerClientID}", h.DeleteDealerClient).Methods("DELETE")
-	dealerClientRouter.HandleFunc("/{dealerClientID}/status", h.UpdateDealerClientStatus).Methods("PUT")
+	dealerClientRouter.HandleFunc("/{dealerClientID}/properties", h.CreateDealerClientPropertyInterest).Methods("POST")
 }
