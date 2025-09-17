@@ -32,7 +32,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 
 	dealerClient.DealerID = dealerIDObj.Hex()
 
-	id, err := h.Service.CreateDealerClient(r.Context(), dealerClient)
+	_, err = h.Service.CreateDealerClient(r.Context(), dealerClient)
 	if err != nil {
 		if err.Error() == "phone number already exists" {
 			response.WithConflict(w, r, "Phone number already exists")
@@ -150,7 +150,7 @@ func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.
 		http.Error(w, "Failed to delete dealer client", http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client deleted successfully"})
+	response.WithMessage(w, r, "Dealer client deleted successfully")
 }
 
 
