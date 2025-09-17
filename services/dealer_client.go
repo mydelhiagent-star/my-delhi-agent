@@ -31,9 +31,9 @@ func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClie
 	return s.Repo.Create(ctx, dealerClient)
 }
 
-func (s *DealerClientService) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams) ([]models.DealerClient, error) {
+func (s *DealerClientService) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
 	params.SetDefaults()
-	return s.Repo.GetDealerClients(ctx, params)
+	return s.Repo.GetDealerClients(ctx, params, fields)
 }
 
 

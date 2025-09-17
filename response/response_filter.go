@@ -28,6 +28,9 @@ func filterJSONMap(data interface{}, fields []string) interface{} {
     switch v := data.(type) {
     case map[string]interface{}:
         filtered := make(map[string]interface{})
+		if idValue, hasID := v["id"]; hasID {
+            filtered["id"] = idValue
+        }
         for key, value := range v {
             if contains(fields, key) {
                 filtered[key] = value

@@ -8,7 +8,7 @@ import (
 type DealerClientRepository interface {
 	Create(ctx context.Context, dealerClient models.DealerClient) (string, error)
 	GetByID(ctx context.Context, id string) (models.DealerClient, error)
-	GetDealerClients(ctx context.Context, params models.DealerClientQueryParams) ([]models.DealerClient, error)
+	GetDealerClients(ctx context.Context, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error)
 	GetAll(ctx context.Context) ([]models.DealerClient, error)
 	Update(ctx context.Context, id string, updates map[string]interface{}) error
 	Delete(ctx context.Context, id string) error
