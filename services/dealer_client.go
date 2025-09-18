@@ -42,7 +42,7 @@ func (s *DealerClientService) GetAllDealerClients(ctx context.Context) ([]models
 	return s.Repo.GetAll(ctx)
 }
 
-func (s *DealerClientService) UpdateDealerClient(ctx context.Context, id string, updates map[string]interface{}) error {
+func (s *DealerClientService) UpdateDealerClient(ctx context.Context, id string, updates models.DealerClientUpdate) error {
 	return s.Repo.Update(ctx, id, updates)
 }
 

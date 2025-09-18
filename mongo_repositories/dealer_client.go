@@ -104,14 +104,17 @@ func (r *MongoDealerClientRepository) GetAll(ctx context.Context) ([]models.Deal
 	return dealerClients, nil
 }
 
-func (r *MongoDealerClientRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
+func (r *MongoDealerClientRepository) Update(ctx context.Context, id string, updates models.DealerClientUpdate) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 	update := bson.M{"$set": updates}
 	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *MongoDealerClientRepository) Delete(ctx context.Context, id string) error {

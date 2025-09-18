@@ -89,45 +89,20 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	}
 
 	var dealerClientUpdate models.DealerClientUpdate
-
-	
-
 	if err := json.NewDecoder(r.Body).Decode(&dealerClientUpdate); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Get current dealer client to fetch property_id and dealer_id
-	currentClient, err := h.Service.GetDealerClientByID(r.Context(), objID.Hex())
-	if err != nil {
-		http.Error(w, "Failed to fetch dealer client", http.StatusInternalServerError)
-		return
-	}
+	
 
-	// Check if phone number already exists for this dealer (excluding current client)
-	exists, err := h.Service.CheckPhoneExistsForDealer(r.Context(), currentClient.DealerID, updateData.Phone)
+	
+	err = h.Service.UpdateDealerClient(r.Context(), objID.Hex(), dealerClientUpdate)
 	if err != nil {
-		http.Error(w, "Failed to check phone number", http.StatusInternalServerError)
+		response.WithInternalError(w, r, "Failed to update client: "+err.Error())
 		return
 	}
-	if exists {
-		http.Error(w, "Phone number already exists", http.StatusConflict)
-		return
-	}
-
-	// Convert updateData to map
-	updateMap := map[string]interface{}{
-		"name":   updateData.Name,
-		"phone":  updateData.Phone,
-		"status": updateData.Status,
-		"note":   updateData.Note,
-	}
-	err = h.Service.UpdateDealerClient(r.Context(), objID.Hex(), updateMap)
-	if err != nil {
-		http.Error(w, "Failed to update client", http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client updated successfully"})
+	response.WithMessage(w, r, "Dealer client updated successfully")
 }
 
 func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.Request) {
