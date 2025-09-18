@@ -3,14 +3,13 @@ package utils
 
 import (
 	"reflect"
-	
+	"strings"
+
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-
 
 
 func BuildMongoFilter(params interface{}) bson.M {
@@ -22,14 +21,12 @@ func BuildMongoFilter(params interface{}) bson.M {
     for i := 0; i < t.NumField(); i++ {
         field := t.Field(i)
         
-       
         if field.Anonymous {
             continue
         }
         
         fieldValue := v.Field(i)
         
-      
         if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
             continue
         }
@@ -42,7 +39,7 @@ func BuildMongoFilter(params interface{}) bson.M {
             continue
         }
         
-        // Get value safely
+       
         var value interface{}
         if fieldValue.Kind() == reflect.Ptr {
             value = fieldValue.Elem().Interface()
@@ -62,20 +59,50 @@ func BuildMongoFilter(params interface{}) bson.M {
         }
         
         
-        if boolValue, ok := value.(bool); ok {
-            if !boolValue {
-               
-                mongoFilter[fieldName] = bson.M{"$ne": true}
-            } else {
-                
-                mongoFilter[fieldName] = true
-            }
+        if isNestedArrayField(fieldName) {
+            handleNestedArrayField(mongoFilter, fieldName, value)
         } else {
-            mongoFilter[fieldName] = value
+            
+            if boolValue, ok := value.(bool); ok {
+                if !boolValue {
+                    mongoFilter[fieldName] = bson.M{"$ne": true}
+                } else {
+                    mongoFilter[fieldName] = true
+                }
+            } else {
+                mongoFilter[fieldName] = value
+            }
         }
     }
     
     return mongoFilter
+}
+
+
+func isNestedArrayField(fieldName string) bool {
+   
+    return strings.Contains(fieldName, ".")
+}
+
+
+func handleNestedArrayField(mongoFilter bson.M, fieldName string, value interface{}) {
+    
+    parts := strings.Split(fieldName, ".")
+    if len(parts) != 2 {
+       
+        mongoFilter[fieldName] = value
+        return
+    }
+    
+    arrayField := parts[0]       
+    nestedField := parts[1]       
+    
+   
+    mongoFilter[arrayField] = bson.M{
+        "$elemMatch": bson.M{
+            nestedField: value,
+        },
+    }
 }
 
 func applyMongoConversion(value interface{}, convertType string) interface{} {
