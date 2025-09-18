@@ -168,9 +168,27 @@ func (r *MongoDealerClientRepository) CreateDealerClientPropertyInterest(ctx con
 	}
 	mongoDealerClientPropertyInterest := converters.ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest)
 
-	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, bson.M{"$addToSet": bson.M{"properties": mongoDealerClientPropertyInterest}})
+	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, bson.M{"$push": bson.M{"properties": mongoDealerClientPropertyInterest}})
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *MongoDealerClientRepository) CheckPropertyInterestExists(ctx context.Context, dealerClientID string, propertyID string) (bool, error) {
+	objectID, err := primitive.ObjectIDFromHex(dealerClientID)
+	if err != nil {
+		return false, err
+	}
+	
+	filter := bson.M{
+		"_id": objectID,
+		"properties.property_id": propertyID,
+	}
+
+	count, err := r.dealerClientCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }

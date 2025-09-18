@@ -14,5 +14,6 @@ type DealerClientRepository interface {
 	Delete(ctx context.Context, id string) error
 	CheckPhoneExistsForDealer(ctx context.Context, dealerID, phone string) (bool, error)
 	UpdateStatus(ctx context.Context, id string, status string) error
+	CheckPropertyInterestExists(ctx context.Context, dealerClientID string, propertyID string) (bool, error)
 	CreateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, dealerClientPropertyInterest models.DealerClientPropertyInterest) error
 }

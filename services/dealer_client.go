@@ -60,5 +60,13 @@ func (s *DealerClientService) UpdateDealerClientStatus(ctx context.Context, id s
 
 func (s *DealerClientService) CreateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, dealerClientPropertyInterest models.DealerClientPropertyInterest) error {
 	
+	exists, err := s.Repo.CheckPropertyInterestExists(ctx, dealerClientID, dealerClientPropertyInterest.PropertyID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("client is already added to this property")
+	}
+
 	return s.Repo.CreateDealerClientPropertyInterest(ctx, dealerClientID, dealerClientPropertyInterest)
 }
