@@ -60,3 +60,11 @@ func ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest models.Dea
         UpdatedAt:  updatedAt,             
     }
 }
+
+func ToMongoDealerClientPropertyInterestSlice(dealerClientPropertyInterests []models.DealerClientPropertyInterest) []mongoModels.DealerClientPropertyInterest {
+	mongoPropertyInterests := make([]mongoModels.DealerClientPropertyInterest, len(dealerClientPropertyInterests))
+	for i, dealerClientPropertyInterest := range dealerClientPropertyInterests {
+		mongoPropertyInterests[i] = ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest)
+	}
+	return mongoPropertyInterests
+}

@@ -32,6 +32,8 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 		return "", err
 	}
 
+	mongoPropertyInterests := converters.ToMongoDealerClientPropertyInterestSlice(dealerClient.PropertyInterests)
+
 	
 
 	mongoDealerClient := mongoModels.DealerClient{
@@ -41,8 +43,9 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 		Note:       dealerClient.Note,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
+		PropertyInterests: mongoPropertyInterests,
 	}
-
+	
 	result, err := r.dealerClientCollection.InsertOne(ctx, mongoDealerClient)
 	if err != nil {
 		return "", err
