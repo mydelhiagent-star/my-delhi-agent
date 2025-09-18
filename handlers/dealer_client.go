@@ -99,7 +99,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	
 	err = h.Service.UpdateDealerClient(r.Context(), objID.Hex(), dealerClientUpdate)
 	if err != nil {
-		response.WithInternalError(w, r, "Failed to update client: "+err.Error())
+		response.WithInternalError(w, r, "Failed to update client. Please try again later.")
 		return
 	}
 	response.WithMessage(w, r, "Dealer client updated successfully")
