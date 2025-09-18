@@ -146,8 +146,8 @@ func (h *DealerClientHandler) CreateDealerClientPropertyInterest(w http.Response
 	}
 	err = h.Service.CreateDealerClientPropertyInterest(r.Context(), objID.Hex(), dealerClientPropertyInterest)
 	if err != nil {
-		http.Error(w, "Failed to create dealer client property interest", http.StatusInternalServerError)
+		response.WithInternalError(w, r, "Failed to add property. Please try again later.")
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"message": "Dealer client property interest created successfully"})
+	response.WithMessage(w, r, "Property added successfully")
 }
