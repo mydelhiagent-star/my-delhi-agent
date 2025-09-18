@@ -180,10 +180,15 @@ func (r *MongoDealerClientRepository) CheckPropertyInterestExists(ctx context.Co
 	if err != nil {
 		return false, err
 	}
-	
+
+	propertyObjectID, err := primitive.ObjectIDFromHex(propertyID)
+	if err != nil {
+		return false, err
+	}
+
 	filter := bson.M{
 		"_id": objectID,
-		"properties.property_id": propertyID,
+		"properties.property_id": propertyObjectID,
 	}
 
 	count, err := r.dealerClientCollection.CountDocuments(ctx, filter)

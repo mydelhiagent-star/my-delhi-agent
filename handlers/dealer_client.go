@@ -146,7 +146,11 @@ func (h *DealerClientHandler) CreateDealerClientPropertyInterest(w http.Response
 	}
 	err = h.Service.CreateDealerClientPropertyInterest(r.Context(), objID.Hex(), dealerClientPropertyInterest)
 	if err != nil {
-		response.WithInternalError(w, r, "Failed to add property. Please try again later.")
+		if err.Error() == "client is already added to this property" {
+			response.WithConflict(w, r, "Client is already added to this property")
+		} else {
+			response.WithInternalError(w, r, "Failed to add property. Please try again later.")
+		}
 		return
 	}
 	response.WithMessage(w, r, "Property added successfully")
