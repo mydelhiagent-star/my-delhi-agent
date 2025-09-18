@@ -88,14 +88,11 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 
-	var updateData struct {
-		Name   string `json:"name"`
-		Phone  string `json:"phone"`
-		Status string `json:"status"`
-		Note   string `json:"note"`
-	}
+	var dealerClientUpdate models.DealerClientUpdate
 
-	if err := json.NewDecoder(r.Body).Decode(&updateData); err != nil {
+	
+
+	if err := json.NewDecoder(r.Body).Decode(&dealerClientUpdate); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}

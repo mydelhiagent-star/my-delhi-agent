@@ -13,16 +13,6 @@ type DealerClient struct {
 	PropertyInterests []DealerClientPropertyInterest `json:"properties"`
 }
 
-type DealerClientUpdate struct {
-	Name       *string    `json:"name"`
-	Phone      *string    `json:"phone"`
-	Email      *string    `json:"email"`
-	Note       *string    `json:"note"`
-	UpdatedAt  *time.Time `json:"updated_at"`
-	PropertyInterests *[]DealerClientPropertyInterest `json:"properties"`
-}
-
-
 type DealerClientPropertyInterest struct {
 	ID         string        `json:"id"`
 	PropertyID string        `json:"property_id"`
@@ -31,6 +21,25 @@ type DealerClientPropertyInterest struct {
 	CreatedAt  time.Time     `json:"created_at"`
 	UpdatedAt  time.Time     `json:"updated_at"`
 }
+
+type DealerClientUpdate struct {
+	Name       *string    `json:"name"`
+	Phone      *string    `json:"phone"`
+	Email      *string    `json:"email"`
+	Note       *string    `json:"note"`
+	UpdatedAt  *time.Time `json:"updated_at"`
+	PropertyInterests *[]DealerClientPropertyInterestUpdate `json:"properties"`
+}
+
+type DealerClientPropertyInterestUpdate struct {
+    ID         *string    `json:"id,omitempty"`
+    PropertyID *string    `json:"property_id,omitempty"`
+    Note       *string    `json:"note,omitempty"`
+    Status     *string    `json:"status,omitempty"`
+    UpdatedAt  *time.Time `json:"updated_at,omitempty"`
+}
+
+
 
 type DealerClientQueryParams struct {
 	ID              *string  `query:"id" mongo:"_id" convert:"objectid"`
