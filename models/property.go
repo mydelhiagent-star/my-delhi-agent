@@ -73,3 +73,18 @@ type PropertyQueryParams struct {
     MaxPrice        *float64 `query:"max_price"`
 	BaseQueryParams
 }
+
+func (p *PropertyQueryParams) SetDefaults() {
+    // ✅ Call parent defaults
+    p.BaseQueryParams.SetDefaults()
+    
+    
+    if p.IsDeleted == nil {
+        defaultFalse := false
+        p.IsDeleted = &defaultFalse
+    }
+    if p.Sold == nil {
+        defaultFalse := false
+        p.Sold = &defaultFalse
+    }
+}

@@ -7,6 +7,7 @@ import (
 	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
 	"myapp/utils"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -38,8 +39,8 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 		Name:       dealerClient.Name,
 		Phone:      dealerClient.Phone,
 		Note:       dealerClient.Note,
-		CreatedAt: dealerClient.CreatedAt,
-		UpdatedAt: dealerClient.UpdatedAt,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	result, err := r.dealerClientCollection.InsertOne(ctx, mongoDealerClient)

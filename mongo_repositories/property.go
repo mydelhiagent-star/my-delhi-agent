@@ -168,7 +168,6 @@ func (r *MongoPropertyRepository) GetNextPropertyNumber(ctx context.Context) (in
 
 func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params models.PropertyQueryParams, fields []string) ([]models.Property, error) {
 	filter := utils.BuildMongoFilter(params)
-
 	skip := (*params.Page - 1) * *params.Limit
 	limit := *params.Limit
 	sortValue := 1

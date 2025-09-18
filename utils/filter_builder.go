@@ -12,6 +12,7 @@ import (
 
 
 
+
 func BuildMongoFilter(params interface{}) bson.M {
     mongoFilter := bson.M{}
     
@@ -20,35 +21,57 @@ func BuildMongoFilter(params interface{}) bson.M {
     
     for i := 0; i < t.NumField(); i++ {
         field := t.Field(i)
-        if field.Anonymous{
+        
+       
+        if field.Anonymous {
             continue
         }
+        
         fieldValue := v.Field(i)
-        if fieldValue.IsNil() {
+        
+      
+        if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
             continue
         }
         
         queryTag := field.Tag.Get("query")
         mongoTag := field.Tag.Get("mongo")
         convertTag := field.Tag.Get("convert")
-		
         
         if queryTag == "" {
             continue
         }
-
-		
-        value := fieldValue.Elem().Interface()
         
+        // Get value safely
+        var value interface{}
+        if fieldValue.Kind() == reflect.Ptr {
+            value = fieldValue.Elem().Interface()
+        } else {
+            value = fieldValue.Interface()
+        }
         
+       
         if convertTag != "" {
             value = applyMongoConversion(value, convertTag)
         }
         
+       
+        fieldName := queryTag
         if mongoTag != "" {
-            mongoFilter[mongoTag] = value
+            fieldName = mongoTag
+        }
+        
+        
+        if boolValue, ok := value.(bool); ok {
+            if !boolValue {
+               
+                mongoFilter[fieldName] = bson.M{"$ne": true}
+            } else {
+                
+                mongoFilter[fieldName] = true
+            }
         } else {
-            mongoFilter[queryTag] = value
+            mongoFilter[fieldName] = value
         }
     }
     
