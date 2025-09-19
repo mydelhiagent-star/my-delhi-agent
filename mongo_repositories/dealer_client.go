@@ -71,11 +71,13 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
 	
 	filter := utils.BuildMongoFilter(params)
+	fmt.Println(filter)
 
 	
-	if utils.NeedsAggregation(filter) {
+	if *params.Aggregation {
 		return r.getDealerClientsWithAggregation(ctx, filter, params, fields)
 	}
+
 
 	
 	opts := options.Find().

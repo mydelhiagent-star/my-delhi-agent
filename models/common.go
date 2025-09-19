@@ -2,13 +2,14 @@ package models
 
 // models/common.go
 type BaseQueryParams struct {
-    Page    *int    `query:"page"`
-    Limit   *int    `query:"limit"`
-    Sort    *string `query:"sort"`
-    Order   *string `query:"order"`
+    Page    *int          `query:"page"`
+    Limit   *int          `query:"limit"`
+    Sort    *string       `query:"sort"`
+    Order   *string       `query:"order"`
+	Aggregation *bool     `query:"aggregation"`
 }
 
-// ✅ Default values
+
 func (b *BaseQueryParams) SetDefaults() {
     if b.Page == nil || *b.Page < 1 {
         b.Page = &[]int{1}[0]
@@ -22,4 +23,7 @@ func (b *BaseQueryParams) SetDefaults() {
     if b.Order == nil || *b.Order == "" {
         b.Order = &[]string{"desc"}[0]
     }
+	if b.Aggregation == nil {
+		b.Aggregation = &[]bool{false}[0]
+	}
 }

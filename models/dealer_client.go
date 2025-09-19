@@ -56,6 +56,9 @@ type DealerClientQueryParams struct {
 	
 	CreatedAt       *time.Time `query:"created_at" mongo:"created_at" convert:"date"`
 	UpdatedAt       *time.Time `query:"updated_at" mongo:"updated_at" convert:"date"`
+
+	PropertiesPropertyIDNe  *string `query:"properties_property_id_ne" mongo:"properties.property_id" convert:"objectid" operator:"ne"`
+
 	
 	BaseQueryParams
 }

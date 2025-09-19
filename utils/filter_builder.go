@@ -9,6 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+
+// ✅ Update utils/filter_builder.go (replace lines 55-67)
 func BuildMongoFilter(params interface{}) bson.M {
     mongoFilter := bson.M{}
     
@@ -31,6 +33,7 @@ func BuildMongoFilter(params interface{}) bson.M {
         queryTag := field.Tag.Get("query")
         mongoTag := field.Tag.Get("mongo")
         convertTag := field.Tag.Get("convert")
+        operatorTag := field.Tag.Get("operator") // ✅ Use operator tag
         
         if queryTag == "" {
             continue
@@ -52,9 +55,25 @@ func BuildMongoFilter(params interface{}) bson.M {
             fieldName = mongoTag
         }
         
-        if isNestedArrayField(fieldName) {
+
+        if operatorTag != "" {
+            mongoOperator := mapOperatorToMongo(operatorTag)
+            
+            if mongoOperator != "" {
+                
+                if isNestedArrayField(fieldName) {
+                    
+                    handleArrayFieldWithOperator(mongoFilter, fieldName, mongoOperator, value)
+                } else {
+                   
+                    mongoFilter[fieldName] = bson.M{mongoOperator: value}
+                }
+            }
+        } else if isNestedArrayField(fieldName) {
+           
             handleNestedArrayField(mongoFilter, fieldName, value)
         } else {
+            
             if boolValue, ok := value.(bool); ok {
                 if !boolValue {
                     mongoFilter[fieldName] = bson.M{"$ne": true}
@@ -71,11 +90,72 @@ func BuildMongoFilter(params interface{}) bson.M {
 }
 
 
+func mapOperatorToMongo(operator string) string {
+    operatorMap := map[string]string{
+        "ne":     "$ne",
+        "nin":    "$nin",
+        "in":     "$in",
+        "gte":    "$gte",
+        "lte":    "$lte",
+        "gt":     "$gt",
+        "lt":     "$lt",
+        "regex":  "$regex",
+        "exists": "$exists",
+        "size":   "$size",
+    }
+    return operatorMap[operator]
+}
+
+// ✅ Generic array field handler
+func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator string, value interface{}) {
+    parts := strings.Split(fieldName, ".")
+    if len(parts) != 2 {
+        mongoFilter[fieldName] = bson.M{operator: value}
+        return
+    }
+    
+    arrayField := parts[0]
+    nestedField := parts[1]
+    
+    // ✅ Generic logic for array field operators
+    switch operator {
+    case "$ne", "$nin":
+        // ✅ Exclusion operators: Use $not with $elemMatch
+        mongoFilter[arrayField] = bson.M{
+            "$not": bson.M{
+                "$elemMatch": bson.M{
+                    nestedField: value,
+                },
+            },
+        }
+    default:
+        // ✅ Inclusion operators: Use $elemMatch
+        mongoFilter[arrayField] = bson.M{
+            "$elemMatch": bson.M{
+                nestedField: bson.M{
+                    operator: value,
+                },
+            },
+        }
+    }
+}
+
+
+
 func NeedsAggregation(filter bson.M) bool {
     for _, value := range filter {
         if elemMatch, ok := value.(bson.M); ok {
+            
             if _, hasElemMatch := elemMatch["$elemMatch"]; hasElemMatch {
                 return true
+            }
+            
+            
+            arrayOperators := []string{"$not", "$all", "$size", "$exists", "$type", "$regex"}
+            for _, op := range arrayOperators {
+                if _, hasOp := elemMatch[op]; hasOp {
+                    return true
+                }
             }
         }
     }
