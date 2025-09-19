@@ -2,6 +2,8 @@ package mongo_repositories
 
 import (
 	"context"
+	"fmt"
+
 	"myapp/converters"
 	"myapp/models"
 	mongoModels "myapp/mongo_models"
@@ -67,7 +69,12 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 	
 	filter := utils.BuildMongoFilter(params)
 
+	
+	if utils.NeedsAggregation(filter) {
+		return r.getDealerClientsWithAggregation(ctx, filter, params, fields)
+	}
 
+	
 	opts := options.Find().
 		SetSort(bson.M{"created_at": -1}).
 		SetSkip(int64(*params.Page - 1)).
@@ -79,6 +86,32 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 	}
 
 	cursor, err := r.dealerClientCollection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var mongoDealerClients []mongoModels.DealerClient
+	if err := cursor.All(ctx, &mongoDealerClients); err != nil {
+		return nil, err
+	}
+	return converters.ToDomainDealerClientSlice(mongoDealerClients), nil
+}
+
+
+func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx context.Context, filter bson.M, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
+	skip := int64((*params.Page - 1) * *params.Limit)
+	limit := int64(*params.Limit + 1) 
+	
+	var projection bson.M
+	if len(fields) > 0 {
+		projection = utils.BuildMongoProjection(fields)
+	}
+	
+	
+	pipeline := utils.BuildAggregationPipeline(filter, "created_at", -1, skip, limit, projection)
+	fmt.Println(pipeline)
+	cursor, err := r.dealerClientCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
