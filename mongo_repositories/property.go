@@ -178,7 +178,7 @@ func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params mode
 	opts := options.Find().
 		SetSort(bson.M{*params.Sort: sortValue}).
 		SetSkip(int64(skip)).
-		SetLimit(int64(limit)).
+		SetLimit(int64(limit)+1).
 		SetBatchSize(100)
 
 	if len(fields) > 0 {
