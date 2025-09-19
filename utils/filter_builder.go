@@ -147,12 +147,12 @@ func BuildAggregationPipeline(filter bson.M, sortField string, sortOrder int, sk
             if _, hasElemMatch := elemMatch["$elemMatch"]; hasElemMatch {
                 condition := elemMatch["$elemMatch"].(bson.M)
                 
-                // ✅ Group conditions by array field name
+                
                 if arrayFieldGroups[fieldName] == nil {
                     arrayFieldGroups[fieldName] = bson.M{}
                 }
                 
-                // ✅ Merge conditions for the same array field
+                
                 for nestedField, nestedValue := range condition {
                     arrayFieldGroups[fieldName][nestedField] = nestedValue
                 }
