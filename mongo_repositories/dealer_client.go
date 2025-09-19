@@ -56,9 +56,12 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 }
 
 func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (models.DealerClient, error) {
-	
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return models.DealerClient{}, err
+	}
 	var dealerClient models.DealerClient
-	err := r.dealerClientCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&dealerClient)
+	err = r.dealerClientCollection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&dealerClient)
 	if err != nil {
 		return models.DealerClient{}, err
 	}
