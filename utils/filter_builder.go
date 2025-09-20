@@ -147,24 +147,7 @@ func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator
 	}
 }
 
-func NeedsAggregation(filter bson.M) bool {
-	for _, value := range filter {
-		if elemMatch, ok := value.(bson.M); ok {
 
-			if _, hasElemMatch := elemMatch["$elemMatch"]; hasElemMatch {
-				return true
-			}
-
-			arrayOperators := []string{"$not", "$all", "$size", "$exists", "$type", "$regex"}
-			for _, op := range arrayOperators {
-				if _, hasOp := elemMatch[op]; hasOp {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
 
 func applyMongoConversion(value interface{}, convertType string) interface{} {
 	switch convertType {
