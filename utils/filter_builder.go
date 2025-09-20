@@ -34,8 +34,8 @@ func BuildMongoFilter(params interface{}) bson.M {
 		queryTag := field.Tag.Get("query")
 		mongoTag := field.Tag.Get("mongo")
 		convertTag := field.Tag.Get("convert")
-		operatorTag := field.Tag.Get("operator")
 		arrayTag := field.Tag.Get("array")
+		operatorTag := field.Tag.Get("operator")
 
 		if queryTag == "" {
 			continue
@@ -63,15 +63,14 @@ func BuildMongoFilter(params interface{}) bson.M {
 			fieldName = mongoTag
 		}
 
-		// ✅ Check if array field should be in match
 		if arrayTag != "" {
 			if Contains(arrayFieldsInMatch, queryTag) {
-				// ✅ Include array field in match
+
 				handleArrayFieldWithOperator(mongoFilter, fieldName, operatorTag, value)
 			}
-			// ✅ If not in arrayFieldsInMatch, skip from match (will go to addFields)
+
 		} else {
-			// ✅ Regular fields always go to match
+
 			if operatorTag != "" {
 				mongoOperator := mapOperatorToMongo(operatorTag)
 				if mongoOperator != "" {
@@ -151,33 +150,19 @@ func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator
 	// ✅ Convert operator to MongoDB operator
 	mongoOperator := mapOperatorToMongo(operator)
 
-	// ✅ Generic logic for array field operators
 	switch mongoOperator {
 	case "$ne", "$nin":
-		// ✅ Exclusion operators: Use $not with $elemMatch
-		mongoFilter[arrayField] = bson.M{
-			"$not": bson.M{
-				"$elemMatch": bson.M{
-					nestedField: value,
-				},
-			},
-		}
+		mongoFilter[arrayField] = bson.M{"$not": bson.M{"$elemMatch": bson.M{nestedField: value}}}
+	case "$all":
+		mongoFilter[arrayField] = bson.M{"$all": value}
+	case "$not":
+		mongoFilter[arrayField] = bson.M{"$not": value}
+	case "$exists", "$size", "$type":
+		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: bson.M{mongoOperator: value}}}
 	case "":
-		// ✅ No operator: Direct equality
-		mongoFilter[arrayField] = bson.M{
-			"$elemMatch": bson.M{
-				nestedField: value,
-			},
-		}
+		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: value}}
 	default:
-		// ✅ Other operators: Use $elemMatch with operator
-		mongoFilter[arrayField] = bson.M{
-			"$elemMatch": bson.M{
-				nestedField: bson.M{
-					mongoOperator: value,
-				},
-			},
-		}
+		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: bson.M{mongoOperator: value}}}
 	}
 }
 
