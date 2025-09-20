@@ -115,7 +115,7 @@ func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx contex
 	
 	
 	pipeline := utils.BuildAggregationPipeline(filter, "created_at", -1, skip, limit, projection)
-	fmt.Println(pipeline)
+	
 	cursor, err := r.dealerClientCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
