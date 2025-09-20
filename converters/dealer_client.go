@@ -40,6 +40,7 @@ func ToDomainDealerClientPropertyInterest(mongoDealerClientPropertyInterest mong
 	return models.DealerClientPropertyInterest{
 		ID: mongoDealerClientPropertyInterest.ID.Hex(),
 		PropertyID: mongoDealerClientPropertyInterest.PropertyID.Hex(),
+		Note: mongoDealerClientPropertyInterest.Note,
 		Status: mongoDealerClientPropertyInterest.Status,
 		CreatedAt: mongoDealerClientPropertyInterest.CreatedAt,
 		UpdatedAt: mongoDealerClientPropertyInterest.UpdatedAt,
