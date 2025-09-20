@@ -111,14 +111,18 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx context.Context, filter bson.M, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
 	skip := int64((*params.Page - 1) * *params.Limit)
 	limit := int64(*params.Limit + 1) 
-	
+	sort := *params.Sort
+	sortValue := 1
+	if *params.Order == "desc" {
+		sortValue = -1
+	}
 	var projection bson.M
 	if len(fields) > 0 {
 		projection = utils.BuildMongoProjection(fields)
 	}
 	
 	
-	pipeline := utils.BuildAggregationPipeline(filter, "created_at", -1, skip, limit, projection)
+	pipeline := utils.BuildAggregationPipeline(filter, sort, sortValue, skip, limit, projection)
 	
 	cursor, err := r.dealerClientCollection.Aggregate(ctx, pipeline)
 	if err != nil {
