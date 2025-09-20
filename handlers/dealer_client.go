@@ -180,3 +180,19 @@ func (h *DealerClientHandler) UpdateDealerClientPropertyInterest(w http.Response
     
     response.WithMessage(w, r, "Property interest updated successfully")
 }
+
+func (h *DealerClientHandler) DeleteDealerClientPropertyInterest(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	dealerClientID := vars["dealerClientID"]
+	propertyInterestID := vars["propertyInterestID"]
+	if dealerClientID == "" || propertyInterestID == "" {
+		http.Error(w, "Missing IDs", http.StatusBadRequest)
+		return
+	}
+	err := h.Service.DeleteDealerClientPropertyInterest(r.Context(), dealerClientID, propertyInterestID)
+	if err != nil {
+		response.WithInternalError(w, r, "Failed to delete property interest")
+		return
+	}
+	response.WithMessage(w, r, "Property interest deleted successfully")
+}

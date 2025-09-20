@@ -2,7 +2,7 @@ package mongo_repositories
 
 import (
 	"context"
-	"fmt"
+	
 
 	"myapp/converters"
 	"myapp/models"
@@ -71,7 +71,7 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
 	
 	filter := utils.BuildMongoFilter(params)
-	fmt.Println(filter)
+	
 
 	
 	if *params.Aggregation {
@@ -270,4 +270,21 @@ func (r *MongoDealerClientRepository) UpdateDealerClientPropertyInterest(ctx con
     }
     
     return nil
+}
+
+func (r *MongoDealerClientRepository) DeleteDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string) error {
+	objectID, err := primitive.ObjectIDFromHex(dealerClientID)
+	if err != nil {
+		return err
+	}
+	propertyInterestObjectID, err := primitive.ObjectIDFromHex(propertyInterestID)
+	if err != nil {
+		return err
+	}
+	filter := bson.M{
+		"_id": objectID,
+		"properties.property_id": propertyInterestObjectID,
+	}
+	_, err = r.dealerClientCollection.UpdateOne(ctx, filter, bson.M{"$pull": bson.M{"properties": bson.M{"property_id": propertyInterestObjectID}}})
+	return err
 }

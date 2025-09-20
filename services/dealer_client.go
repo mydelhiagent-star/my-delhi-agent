@@ -72,3 +72,7 @@ func (s *DealerClientService) CreateDealerClientPropertyInterest(ctx context.Con
 func (s *DealerClientService) UpdateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string, update models.DealerClientPropertyInterestUpdate) error {
 	return s.Repo.UpdateDealerClientPropertyInterest(ctx, dealerClientID, propertyInterestID, update)
 }
+
+func (s *DealerClientService) DeleteDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string) error {
+	return s.Repo.DeleteDealerClientPropertyInterest(ctx, dealerClientID, propertyInterestID)
+}
