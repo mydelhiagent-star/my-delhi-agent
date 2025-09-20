@@ -7,6 +7,8 @@ type BaseQueryParams struct {
     Sort    *string       `query:"sort"`
     Order   *string       `query:"order"`
 	Aggregation *bool     `query:"aggregation"`
+
+	ArrayFilters *string `query:"array_filters"` 
 }
 
 
@@ -26,4 +28,9 @@ func (b *BaseQueryParams) SetDefaults() {
 	if b.Aggregation == nil {
 		b.Aggregation = &[]bool{false}[0]
 	}
+	if b.ArrayFilters == nil {
+		b.ArrayFilters = &[]string{""}[0]
+	}
+
+	
 }
