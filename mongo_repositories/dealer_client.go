@@ -131,26 +131,25 @@ func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx contex
 
 
 
-func (r *MongoDealerClientRepository) GetAll(ctx context.Context) ([]models.DealerClient, error) {
-	cursor, err := r.dealerClientCollection.Find(ctx, bson.M{})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
 
-	var dealerClients []models.DealerClient
-	if err := cursor.All(ctx, &dealerClients); err != nil {
-		return nil, err
-	}
-	return dealerClients, nil
-}
 
 func (r *MongoDealerClientRepository) Update(ctx context.Context, id string, updates models.DealerClientUpdate) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	update := bson.M{"$set": updates}
+	updateDoc := bson.M{}
+	if updates.Name != nil {
+		updateDoc["name"] = *updates.Name
+	}
+	if updates.Phone != nil {
+		updateDoc["phone"] = *updates.Phone
+	}
+	if updates.Note != nil {
+		updateDoc["note"] = *updates.Note
+	}
+	updateDoc["updated_at"] = time.Now()
+	update := bson.M{"$set": updateDoc}
 	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
 	if err != nil {
 		return err
@@ -234,4 +233,41 @@ func (r *MongoDealerClientRepository) CheckPropertyInterestExists(ctx context.Co
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *MongoDealerClientRepository) UpdateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string, update models.DealerClientPropertyInterestUpdate) error {
+    objectID, err := primitive.ObjectIDFromHex(dealerClientID)
+    if err != nil {
+        return err
+    }
+    propertyInterestObjectID, err := primitive.ObjectIDFromHex(propertyInterestID)
+    if err != nil {
+        return err
+    }
+    
+    
+    
+    // ✅ Correct filter
+    filter := bson.M{
+        "_id": objectID,
+        "properties.property_id": propertyInterestObjectID,  
+    }
+
+    // ✅ Conditional updates
+    updateDoc := bson.M{}
+    if update.Note != nil {
+        updateDoc["properties.$.note"] = *update.Note
+    }
+    if update.Status != nil {
+        updateDoc["properties.$.status"] = *update.Status
+    }
+    updateDoc["updated_at"] = time.Now()
+    
+   
+    if len(updateDoc) > 0 {
+        _, err = r.dealerClientCollection.UpdateOne(ctx, filter, bson.M{"$set": updateDoc})
+        return err
+    }
+    
+    return nil
 }

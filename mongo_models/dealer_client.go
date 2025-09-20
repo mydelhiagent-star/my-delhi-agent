@@ -26,15 +26,3 @@ type DealerClientPropertyInterest struct {
 	UpdatedAt  time.Time          `bson:"updated_at"`
 }
 
-type DealerClientUpdate struct {
-	Name      *string    `bson:"name,omitempty"`
-	Phone     *string    `bson:"phone,omitempty"`
-	Note      *string    `bson:"note,omitempty"`
-	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
-}
-
-type DealerClientPropertyInterestUpdate struct {
-	Note      *string    `bson:"note,omitempty"`
-	Status    *string    `bson:"status,omitempty"`
-	UpdatedAt *time.Time `bson:"updated_at,omitempty"`
-}

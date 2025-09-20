@@ -38,9 +38,7 @@ func (s *DealerClientService) GetDealerClients(ctx context.Context, params model
 
 
 
-func (s *DealerClientService) GetAllDealerClients(ctx context.Context) ([]models.DealerClient, error) {
-	return s.Repo.GetAll(ctx)
-}
+
 
 func (s *DealerClientService) UpdateDealerClient(ctx context.Context, id string, updates models.DealerClientUpdate) error {
 	return s.Repo.Update(ctx, id, updates)
@@ -69,4 +67,8 @@ func (s *DealerClientService) CreateDealerClientPropertyInterest(ctx context.Con
 	}
 
 	return s.Repo.CreateDealerClientPropertyInterest(ctx, dealerClientID, dealerClientPropertyInterest)
+}
+
+func (s *DealerClientService) UpdateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string, update models.DealerClientPropertyInterestUpdate) error {
+	return s.Repo.UpdateDealerClientPropertyInterest(ctx, dealerClientID, propertyInterestID, update)
 }

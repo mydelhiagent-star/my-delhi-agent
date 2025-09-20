@@ -155,3 +155,28 @@ func (h *DealerClientHandler) CreateDealerClientPropertyInterest(w http.Response
 	}
 	response.WithMessage(w, r, "Property added successfully")
 }
+
+func (h *DealerClientHandler) UpdateDealerClientPropertyInterest(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    dealerClientID := vars["dealerClientID"]
+    propertyInterestID := vars["propertyInterestID"]
+    
+    if dealerClientID == "" || propertyInterestID == "" {
+        http.Error(w, "Missing IDs", http.StatusBadRequest)
+        return
+    }
+    
+    var update models.DealerClientPropertyInterestUpdate
+    if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+    
+    err := h.Service.UpdateDealerClientPropertyInterest(r.Context(), dealerClientID, propertyInterestID, update)
+    if err != nil {
+        response.WithInternalError(w, r, "Failed to update property interest")
+        return
+    }
+    
+    response.WithMessage(w, r, "Property interest updated successfully")
+}
