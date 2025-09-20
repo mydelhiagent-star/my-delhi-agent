@@ -28,7 +28,6 @@ type DealerClientUpdate struct {
 	Email             *string                               `json:"email"`
 	Note              *string                               `json:"note"`
 	UpdatedAt         *time.Time                            `json:"updated_at"`
-	PropertyInterests *[]DealerClientPropertyInterestUpdate `json:"properties"`
 }
 
 type DealerClientPropertyInterestUpdate struct {
