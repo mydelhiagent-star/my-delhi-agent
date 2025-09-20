@@ -23,19 +23,14 @@ type DealerClientPropertyInterest struct {
 }
 
 type DealerClientUpdate struct {
-	Name              *string                               `json:"name"`
-	Phone             *string                               `json:"phone"`
-	Email             *string                               `json:"email"`
-	Note              *string                               `json:"note"`
-	UpdatedAt         *time.Time                            `json:"updated_at"`
+    Name  *string `json:"name,omitempty"`   
+    Phone *string `json:"phone,omitempty"`  
+    Note  *string `json:"note,omitempty"`   
 }
 
 type DealerClientPropertyInterestUpdate struct {
-	ID         *string    `json:"id,omitempty"`
-	PropertyID *string    `json:"property_id,omitempty"`
 	Note       *string    `json:"note,omitempty"`
 	Status     *string    `json:"status,omitempty"`
-	UpdatedAt  *time.Time `json:"updated_at,omitempty"`
 }
 
 type DealerClientQueryParams struct {
