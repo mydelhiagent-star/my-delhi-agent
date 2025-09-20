@@ -72,18 +72,22 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 	
 	filter := utils.BuildMongoFilter(params)
 	
-
-	
 	if *params.Aggregation {
 		return r.getDealerClientsWithAggregation(ctx, filter, params, fields)
 	}
 
+	skip := (*params.Page - 1) * *params.Limit
+	limit := *params.Limit
+	sortValue := 1
+	if *params.Order == "desc" {
+		sortValue = -1
+	}
 
-	
+
 	opts := options.Find().
-		SetSort(bson.M{"created_at": -1}).
-		SetSkip(int64(*params.Page - 1)*int64(*params.Limit)).
-		SetLimit(int64(*params.Limit)+1).
+		SetSort(bson.M{*params.Sort: sortValue}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit)+1).
 		SetBatchSize(100)
 	
 	if len(fields) > 0 {
