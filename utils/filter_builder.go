@@ -12,7 +12,7 @@ import (
 func BuildMongoFilter(params interface{}) bson.M {
 	mongoFilter := bson.M{}
 
-	// ✅ Get array fields that should be in match
+	
 	arrayFieldsInMatch := getArrayFieldsInMatch(params)
 
 	v := reflect.ValueOf(params)
@@ -52,9 +52,9 @@ func BuildMongoFilter(params interface{}) bson.M {
 			value = applyMongoConversion(value, convertTag)
 		}
 
-		// ✅ Handle boolean logic: false -> $ne: true
+		
 		if boolValue, ok := value.(bool); ok && !boolValue {
-			operatorTag = "ne"
+			operatorTag = "$ne"
 			value = true
 		}
 
@@ -72,10 +72,8 @@ func BuildMongoFilter(params interface{}) bson.M {
 		} else {
 
 			if operatorTag != "" {
-				mongoOperator := mapOperatorToMongo(operatorTag)
-				if mongoOperator != "" {
-					mongoFilter[fieldName] = bson.M{mongoOperator: value}
-				}
+				mongoFilter[fieldName] = bson.M{operatorTag: value}
+				
 			} else {
 				mongoFilter[fieldName] = value
 			}
@@ -114,30 +112,14 @@ func getArrayFieldsInMatch(params interface{}) []string {
 	return []string{} // ✅ Default: no array fields in match
 }
 
-func mapOperatorToMongo(operator string) string {
-	operatorMap := map[string]string{
-		"eq":     "$eq",
-		"ne":     "$ne",
-		"nin":    "$nin",
-		"in":     "$in",
-		"gte":    "$gte",
-		"lte":    "$lte",
-		"gt":     "$gt",
-		"lt":     "$lt",
-		"regex":  "$regex",
-		"exists": "$exists",
-		"size":   "$size",
-	}
-	return operatorMap[operator]
-}
+
 
 // ✅ Generic array field handler
 func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator string, value interface{}) {
 	parts := strings.Split(fieldName, ".")
 	if len(parts) != 2 {
-		mongoOperator := mapOperatorToMongo(operator)
-		if mongoOperator != "" {
-			mongoFilter[fieldName] = bson.M{mongoOperator: value}
+		if operator != "" {
+			mongoFilter[fieldName] = bson.M{operator: value}
 		} else {
 			mongoFilter[fieldName] = value
 		}
@@ -147,10 +129,10 @@ func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator
 	arrayField := parts[0]
 	nestedField := parts[1]
 
-	// ✅ Convert operator to MongoDB operator
-	mongoOperator := mapOperatorToMongo(operator)
+	
+	
 
-	switch mongoOperator {
+	switch operator {
 	case "$ne", "$nin":
 		mongoFilter[arrayField] = bson.M{"$not": bson.M{"$elemMatch": bson.M{nestedField: value}}}
 	case "$all":
@@ -158,11 +140,11 @@ func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator
 	case "$not":
 		mongoFilter[arrayField] = bson.M{"$not": value}
 	case "$exists", "$size", "$type":
-		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: bson.M{mongoOperator: value}}}
+		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: bson.M{operator: value}}}
 	case "":
 		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: value}}
 	default:
-		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: bson.M{mongoOperator: value}}}
+		mongoFilter[arrayField] = bson.M{"$elemMatch": bson.M{nestedField: bson.M{operator: value}}}
 	}
 }
 
