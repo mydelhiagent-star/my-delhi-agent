@@ -109,12 +109,11 @@ func getArrayFieldsInMatch(params interface{}) []string {
 		}
 	}
 
-	return []string{} // ✅ Default: no array fields in match
+	return []string{} 
 }
 
 
 
-// ✅ Generic array field handler
 func handleArrayFieldWithOperator(mongoFilter bson.M, fieldName string, operator string, value interface{}) {
 	parts := strings.Split(fieldName, ".")
 	if len(parts) != 2 {
@@ -212,16 +211,16 @@ func BuildAggregationPipeline(filter bson.M, sortField string, sortOrder int, sk
 		var andConditions []bson.M
 
 		for nestedField, nestedValue := range combinedCondition {
-			// ✅ Check if nestedValue is already a MongoDB operator structure
+			
 			if operatorMap, ok := nestedValue.(bson.M); ok {
-				// ✅ Extract the operator and value
+				
 				for operator, value := range operatorMap {
 					andConditions = append(andConditions, bson.M{
 						operator: bson.A{"$$item." + nestedField, value},
 					})
 				}
 			} else {
-				// ✅ Plain value: use $eq
+				
 				andConditions = append(andConditions, bson.M{
 					"$eq": bson.A{"$$item." + nestedField, nestedValue},
 				})
