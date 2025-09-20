@@ -4,6 +4,7 @@ package utils
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -37,6 +38,8 @@ func BuildUpdateDocument(update interface{}) bson.M {
             updateDoc[fieldName] = fieldValue.Interface()
         }
     }
+
+	updateDoc["updated_at"] = time.Now()
     
     return updateDoc
 }
