@@ -24,12 +24,10 @@ func BuildUpdateDocument(update interface{}) bson.M {
             continue
         }
         
-        // ✅ Get BSON field name directly
+       
         bsonTag := field.Tag.Get("bson")
-        fieldName := bsonTag  // ✅ No split needed!
-        if fieldName == "" {
-            fieldName = strings.ToLower(field.Name)
-        }
+        fieldName := bsonTag  
+       
         
         // Add to update document
         if fieldValue.Kind() == reflect.Ptr {
