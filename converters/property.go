@@ -92,3 +92,28 @@ func ToDomainPropertySlice(mongoProperties []mongoModels.Property) []models.Prop
 	return properties
 }
 
+// converters/property.go
+func ToMongoPropertyUpdate(update models.PropertyUpdate) mongoModels.PropertyUpdate {
+    return mongoModels.PropertyUpdate{
+        Title:           update.Title,
+        Address:         update.Address,
+        NearestLandmark: update.NearestLandmark,
+        SoldBy:          update.SoldBy,
+        MinPrice:        update.MinPrice,
+        MaxPrice:        update.MaxPrice,
+        Description:     update.Description,
+        Photos:          update.Photos,
+        Videos:          update.Videos,
+        OwnerName:       update.OwnerName,
+        OwnerPhone:      update.OwnerPhone,
+        Sold:            update.Sold,
+        IsDeleted:       update.IsDeleted,
+        SoldPrice:       update.SoldPrice,
+        SoldDate:        update.SoldDate,
+        Area:            update.Area,
+        Bedrooms:        update.Bedrooms,
+        Bathrooms:       update.Bathrooms,
+        PropertyType:    update.PropertyType,
+        UpdatedAt:       update.UpdatedAt,
+    }
+}
