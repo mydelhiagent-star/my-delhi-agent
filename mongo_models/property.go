@@ -32,28 +32,28 @@ type Property struct {
 	PropertyType    string             `bson:"property_type"`
 }
 
-// mongo_models/property.go
+
 type PropertyUpdate struct {
-    Title           *string    `bson:"title,omitempty"`
-    Address         *string    `bson:"address,omitempty"`
-    NearestLandmark *string    `bson:"nearest_landmark,omitempty"`
-    SoldBy          *string    `bson:"sold_by,omitempty"`
-    MinPrice        *int64     `bson:"min_price,omitempty"`
-    MaxPrice        *int64     `bson:"max_price,omitempty"`
-    Description     *string    `bson:"description,omitempty"`
-    Photos          *[]string  `bson:"photos,omitempty"`
-    Videos          *[]string  `bson:"videos,omitempty"`
-    OwnerName       *string    `bson:"owner_name,omitempty"`
-    OwnerPhone      *string    `bson:"owner_phone,omitempty"`
-    Sold            *bool      `bson:"sold,omitempty"`
-    IsDeleted       *bool      `bson:"is_deleted,omitempty"`
-    SoldPrice       *int64     `bson:"sold_price,omitempty"`
-    SoldDate        *time.Time `bson:"sold_date,omitempty"`
-    Area            *float64   `bson:"area,omitempty"`
-    Bedrooms        *int       `bson:"bedrooms,omitempty"`
-    Bathrooms       *int       `bson:"bathrooms,omitempty"`
-    PropertyType    *string    `bson:"property_type,omitempty"`
-    UpdatedAt       *time.Time `bson:"updated_at,omitempty"`
+    Title           *string    `bson:"title"`
+    Address         *string    `bson:"address"`
+    NearestLandmark *string    `bson:"nearest_landmark"`
+    SoldBy          *string    `bson:"sold_by"`
+    MinPrice        *int64     `bson:"min_price"`
+    MaxPrice        *int64     `bson:"max_price"`
+    Description     *string    `bson:"description"`
+    Photos          *[]string  `bson:"photos"`
+    Videos          *[]string  `bson:"videos"`
+    OwnerName       *string    `bson:"owner_name"`
+    OwnerPhone      *string    `bson:"owner_phone"`
+    Sold            *bool      `bson:"sold"`
+    IsDeleted       *bool      `bson:"is_deleted"`
+    SoldPrice       *int64     `bson:"sold_price"`
+    SoldDate        *time.Time `bson:"sold_date"`
+    Area            *float64   `bson:"area"`
+    Bedrooms        *int       `bson:"bedrooms"`
+    Bathrooms       *int       `bson:"bathrooms"`
+    PropertyType    *string    `bson:"property_type"`
+    UpdatedAt       *time.Time `bson:"updated_at"`
 }
 
 

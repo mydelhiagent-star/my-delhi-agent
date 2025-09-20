@@ -100,77 +100,17 @@ func (r *MongoPropertyRepository) GetByDealer(ctx context.Context, dealerID stri
 	return converters.ToDomainPropertySlice(mongoProperties), nil
 }
 
+// mongo_repositories/property.go
 func (r *MongoPropertyRepository) Update(ctx context.Context, id string, updates models.PropertyUpdate) error {
-	objectID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
-
-	updateDoc := bson.M{}
-	if updates.Title != nil {
-		updateDoc["title"] = *updates.Title
-	}
-	if updates.Address != nil {
-		updateDoc["address"] = *updates.Address
-	}
-	if updates.NearestLandmark != nil {
-		updateDoc["nearest_landmark"] = *updates.NearestLandmark
-	}
-	if updates.SoldBy != nil {
-		updateDoc["sold_by"] = *updates.SoldBy
-	}
-	if updates.MinPrice != nil {
-		updateDoc["min_price"] = *updates.MinPrice
-	}
-	if updates.MaxPrice != nil {
-		updateDoc["max_price"] = *updates.MaxPrice
-	}
-	if updates.Description != nil {
-		updateDoc["description"] = *updates.Description
-	}
-	if updates.Photos != nil {
-		updateDoc["photos"] = *updates.Photos
-	}
-	if updates.Videos != nil {
-		updateDoc["videos"] = *updates.Videos
-	}
-	if updates.OwnerName != nil {
-		updateDoc["owner_name"] = *updates.OwnerName
-	}
-	if updates.OwnerPhone != nil {
-		updateDoc["owner_phone"] = *updates.OwnerPhone
-	}
-	if updates.Sold != nil {
-		updateDoc["sold"] = *updates.Sold
-	}
-	if updates.IsDeleted != nil {
-		updateDoc["is_deleted"] = *updates.IsDeleted
-	}
-	if updates.SoldPrice != nil {
-		updateDoc["sold_price"] = *updates.SoldPrice
-	}
-	if updates.SoldDate != nil {
-		updateDoc["sold_date"] = *updates.SoldDate
-	}
-	if updates.Area != nil {
-		updateDoc["area"] = *updates.Area
-	}
-	if updates.Bedrooms != nil {
-		updateDoc["bedrooms"] = *updates.Bedrooms
-	}
-	if updates.Bathrooms != nil {
-		updateDoc["bathrooms"] = *updates.Bathrooms
-	}
-	if updates.PropertyType != nil {
-		updateDoc["property_type"] = *updates.PropertyType
-	}
-	if updates.UpdatedAt != nil {
-		updateDoc["updated_at"] = *updates.UpdatedAt
-	}
-
-	update := bson.M{"$set": updateDoc}
-	_, err = r.propertyCollection.UpdateByID(ctx, objectID, update)
-	return err
+    objectID, err := primitive.ObjectIDFromHex(id)
+    if err != nil {
+        return err
+    }
+    mongoUpdate := converters.ToMongoPropertyUpdate(updates)
+    updateDoc := utils.BuildUpdateDocument(mongoUpdate)
+    update := bson.M{"$set": updateDoc}
+    _, err = r.propertyCollection.UpdateByID(ctx, objectID, update)
+    return err
 }
 
 func (r *MongoPropertyRepository) Delete(ctx context.Context, id string) error {
