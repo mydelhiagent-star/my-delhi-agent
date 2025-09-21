@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"myapp/middlewares"
 	"myapp/models"
 	"myapp/response"
 	"myapp/services"
@@ -27,6 +28,16 @@ func (h *InquiryHandler) CreateInquiry(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&inquiry); err != nil {
 		response.WithError(w, r, "Invalid request body")
 		return
+	}
+
+	// Set source and dealer_id based on authentication
+	if userID := r.Context().Value(middlewares.UserIDKey); userID != nil {
+		inquiry.Source = "dealer_portal"
+		if dealerID, ok := userID.(string); ok && dealerID != "" {
+			inquiry.DealerID = &dealerID
+		}
+	} else {
+		inquiry.Source = "landing_page"
 	}
 
 	createdInquiry, err := h.Service.CreateInquiry(r.Context(), inquiry)

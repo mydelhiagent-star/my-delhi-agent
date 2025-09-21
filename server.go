@@ -128,7 +128,7 @@ func main() {
 	routes.RegisterPropertyRoutes(r, propertyHandler, cfg.JWTSecret)
 	routes.RegisterCloudFareRoutes(r, cloudfareHandler, cfg.JWTSecret)
 	routes.RegisterDealerClientRoutes(r, dealerClientHandler, cfg.JWTSecret)
-	routes.SetupInquiryRoutes(r, inquiryHandler)
+	routes.SetupInquiryRoutes(r, inquiryHandler, cfg.JWTSecret)
 
 	corsHandler := h.CORS(
 		h.AllowedOrigins([]string{"*"}),

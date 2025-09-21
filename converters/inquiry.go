@@ -8,14 +8,22 @@ import (
 )
 
 func ToDomainInquiry(mongoInquiry mongoModels.Inquiry) models.Inquiry {
-	return models.Inquiry{
+	inquiry := models.Inquiry{
 		ID:          mongoInquiry.ID.Hex(),
+		Source:      mongoInquiry.Source,
 		Name:        mongoInquiry.Name,
 		Phone:       mongoInquiry.Phone,
 		Requirement: mongoInquiry.Requirement,
 		CreatedAt:   mongoInquiry.CreatedAt,
 		UpdatedAt:   mongoInquiry.UpdatedAt,
 	}
+
+	if mongoInquiry.DealerID != nil {
+		dealerID := mongoInquiry.DealerID.Hex()
+		inquiry.DealerID = &dealerID
+	}
+
+	return inquiry
 }
 
 func ToDomainInquirySlice(mongoInquiries []mongoModels.Inquiry) []models.Inquiry {
@@ -32,8 +40,17 @@ func ToMongoInquiry(inquiry models.Inquiry) mongoModels.Inquiry {
 		objectID, _ = primitive.ObjectIDFromHex(inquiry.ID)
 	}
 
+	var dealerObjectID *primitive.ObjectID
+	if inquiry.DealerID != nil && *inquiry.DealerID != "" {
+		if id, err := primitive.ObjectIDFromHex(*inquiry.DealerID); err == nil {
+			dealerObjectID = &id
+		}
+	}
+
 	return mongoModels.Inquiry{
 		ID:          objectID,
+		DealerID:    dealerObjectID,
+		Source:      inquiry.Source,
 		Name:        inquiry.Name,
 		Phone:       inquiry.Phone,
 		Requirement: inquiry.Requirement,
@@ -43,7 +60,16 @@ func ToMongoInquiry(inquiry models.Inquiry) mongoModels.Inquiry {
 }
 
 func ToMongoInquiryUpdate(update models.InquiryUpdate) mongoModels.InquiryUpdate {
+	var dealerObjectID *primitive.ObjectID
+	if update.DealerID != nil && *update.DealerID != "" {
+		if id, err := primitive.ObjectIDFromHex(*update.DealerID); err == nil {
+			dealerObjectID = &id
+		}
+	}
+
 	return mongoModels.InquiryUpdate{
+		DealerID:    dealerObjectID,
+		Source:      update.Source,
 		Name:        update.Name,
 		Phone:       update.Phone,
 		Requirement: update.Requirement,
