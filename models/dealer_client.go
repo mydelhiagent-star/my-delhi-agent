@@ -2,13 +2,20 @@ package models
 
 import "time"
 
+type Document struct {
+	URL  string `json:"url"`
+	Type string `json:"type"`
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+}
+
 type DealerClient struct {
 	ID                string                         `json:"id"`
 	DealerID          string                         `json:"dealer_id"`
 	Name              string                         `json:"name"`
 	Phone             string                         `json:"phone"`
 	Note              string                         `json:"note"`
-	Docs              []string                       `json:"docs"`
+	Docs              []Document                     `json:"docs"`
 	CreatedAt         time.Time                      `json:"created_at"`
 	UpdatedAt         time.Time                      `json:"updated_at"`
 	PropertyInterests []DealerClientPropertyInterest `json:"properties"`
@@ -24,10 +31,10 @@ type DealerClientPropertyInterest struct {
 }
 
 type DealerClientUpdate struct {
-	Name  *string   `json:"name,omitempty"`
-	Phone *string   `json:"phone,omitempty"`
-	Note  *string   `json:"note,omitempty"`
-	Docs  *[]string `json:"docs,omitempty"`
+	Name  *string     `json:"name,omitempty"`
+	Phone *string     `json:"phone,omitempty"`
+	Note  *string     `json:"note,omitempty"`
+	Docs  *[]Document `json:"docs,omitempty"`
 }
 
 type DealerClientPropertyInterestUpdate struct {
