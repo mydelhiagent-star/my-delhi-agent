@@ -37,7 +37,7 @@ func (h *InquiryHandler) CreateInquiry(w http.ResponseWriter, r *http.Request) {
 			inquiry.DealerID = &dealerID
 		}
 	} else {
-		inquiry.Source = "landing_page"
+		inquiry.Source = "home_page"
 	}
 
 	createdInquiry, err := h.Service.CreateInquiry(r.Context(), inquiry)
