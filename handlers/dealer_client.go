@@ -33,15 +33,9 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 
 	dealerClient.DealerID = dealerIDObj.Hex()
 
-	// Process document URLs - add Cloudflare public URL prefix
-	publicURLPrefix := h.CloudflarePublicURL
-	for i, docKey := range dealerClient.Docs {
-		if docKey.URL != "" {
-			dealerClient.Docs[i].URL = publicURLPrefix + docKey.URL
-		}
-	}
+	
 
-	_, err = h.Service.CreateDealerClient(r.Context(), dealerClient)
+	id, err := h.Service.CreateDealerClient(r.Context(), dealerClient)
 	if err != nil {
 		if err.Error() == "phone number already exists" {
 			response.WithConflict(w, r, "Phone number already exists")
@@ -53,6 +47,7 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 
 	response.WithPayload(w, r, map[string]interface{}{
 		"message": "client created successfully",
+		"id": id,
 	})
 }
 
@@ -101,15 +96,7 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// Process document URLs - add Cloudflare public URL prefix
-	if dealerClientUpdate.Docs != nil {
-		publicURLPrefix := h.CloudflarePublicURL
-		for i, docKey := range *dealerClientUpdate.Docs {
-			if docKey.URL != "" {
-				(*dealerClientUpdate.Docs)[i].URL = publicURLPrefix + docKey.URL
-			}
-		}
-	}
+	
 
 	err = h.Service.UpdateDealerClient(r.Context(), objID.Hex(), dealerClientUpdate)
 	if err != nil {
