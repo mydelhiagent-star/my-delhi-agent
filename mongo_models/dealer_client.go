@@ -25,18 +25,19 @@ type DealerClient struct {
 }
 
 type DealerClientPropertyInterest struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty"`
-	PropertyID primitive.ObjectID `bson:"property_id"`
-	Note       string             `bson:"note,omitempty"`
-	Status     string             `bson:"status"`
-	CreatedAt  time.Time          `bson:"created_at"`
-	UpdatedAt  time.Time          `bson:"updated_at"`
+	ID             primitive.ObjectID `bson:"_id,omitempty"`
+	PropertyID     primitive.ObjectID `bson:"property_id"`
+	PropertyNumber int64              `bson:"property_number"`
+	Note           string             `bson:"note,omitempty"`
+	Status         string             `bson:"status"`
+	CreatedAt      time.Time          `bson:"created_at"`
+	UpdatedAt      time.Time          `bson:"updated_at"`
 }
 
 type DealerClientUpdate struct {
-	Name  *string     `bson:"name"`
-	Phone *string     `bson:"phone"`
-	Note  *string     `bson:"note"`
+	Name  *string           `bson:"name"`
+	Phone *string           `bson:"phone"`
+	Note  *string           `bson:"note"`
 	Docs  *[]DocumentUpdate `bson:"docs"`
 }
 

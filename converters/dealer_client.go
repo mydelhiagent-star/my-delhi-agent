@@ -49,12 +49,13 @@ func ToDomainDealerClientPropertyInterestSlice(mongoDealerClientPropertyInterest
 
 func ToDomainDealerClientPropertyInterest(mongoDealerClientPropertyInterest mongoModels.DealerClientPropertyInterest) models.DealerClientPropertyInterest {
 	return models.DealerClientPropertyInterest{
-		ID:         mongoDealerClientPropertyInterest.ID.Hex(),
-		PropertyID: mongoDealerClientPropertyInterest.PropertyID.Hex(),
-		Note:       mongoDealerClientPropertyInterest.Note,
-		Status:     mongoDealerClientPropertyInterest.Status,
-		CreatedAt:  mongoDealerClientPropertyInterest.CreatedAt,
-		UpdatedAt:  mongoDealerClientPropertyInterest.UpdatedAt,
+		ID:             mongoDealerClientPropertyInterest.ID.Hex(),
+		PropertyID:     mongoDealerClientPropertyInterest.PropertyID.Hex(),
+		PropertyNumber: mongoDealerClientPropertyInterest.PropertyNumber,
+		Note:           mongoDealerClientPropertyInterest.Note,
+		Status:         mongoDealerClientPropertyInterest.Status,
+		CreatedAt:      mongoDealerClientPropertyInterest.CreatedAt,
+		UpdatedAt:      mongoDealerClientPropertyInterest.UpdatedAt,
 	}
 }
 
@@ -63,12 +64,13 @@ func ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest models.Dea
 	propertyObjectID, _ := primitive.ObjectIDFromHex(dealerClientPropertyInterest.PropertyID)
 	createdAt, updatedAt := CreationTimestamps()
 	return mongoModels.DealerClientPropertyInterest{
-		ID:         primitive.NewObjectID(),
-		PropertyID: propertyObjectID,
-		Note:       dealerClientPropertyInterest.Note,
-		Status:     dealerClientPropertyInterest.Status,
-		CreatedAt:  createdAt,
-		UpdatedAt:  updatedAt,
+		ID:             primitive.NewObjectID(),
+		PropertyID:     propertyObjectID,
+		PropertyNumber: dealerClientPropertyInterest.PropertyNumber,
+		Note:           dealerClientPropertyInterest.Note,
+		Status:         dealerClientPropertyInterest.Status,
+		CreatedAt:      createdAt,
+		UpdatedAt:      updatedAt,
 	}
 }
 

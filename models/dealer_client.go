@@ -21,12 +21,13 @@ type DealerClient struct {
 }
 
 type DealerClientPropertyInterest struct {
-	ID         string    `json:"id"`
-	PropertyID string    `json:"property_id"`
-	Note       string    `json:"note"`
-	Status     string    `json:"status"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID             string    `json:"id"`
+	PropertyID     string    `json:"property_id"`
+	PropertyNumber int64     `json:"property_number"`
+	Note           string    `json:"note"`
+	Status         string    `json:"status"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 type DealerClientUpdate struct {
