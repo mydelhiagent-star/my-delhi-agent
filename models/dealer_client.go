@@ -8,6 +8,7 @@ type DealerClient struct {
 	Name              string                         `json:"name"`
 	Phone             string                         `json:"phone"`
 	Note              string                         `json:"note"`
+	Docs              []string                       `json:"docs"`
 	CreatedAt         time.Time                      `json:"created_at"`
 	UpdatedAt         time.Time                      `json:"updated_at"`
 	PropertyInterests []DealerClientPropertyInterest `json:"properties"`
@@ -23,14 +24,15 @@ type DealerClientPropertyInterest struct {
 }
 
 type DealerClientUpdate struct {
-    Name  *string `json:"name,omitempty"`   
-    Phone *string `json:"phone,omitempty"`  
-    Note  *string `json:"note,omitempty"`   
+	Name  *string   `json:"name,omitempty"`
+	Phone *string   `json:"phone,omitempty"`
+	Note  *string   `json:"note,omitempty"`
+	Docs  *[]string `json:"docs,omitempty"`
 }
 
 type DealerClientPropertyInterestUpdate struct {
-	Note       *string    `json:"note,omitempty"`
-	Status     *string    `json:"status,omitempty"`
+	Note   *string `json:"note,omitempty"`
+	Status *string `json:"status,omitempty"`
 }
 
 type DealerClientQueryParams struct {
@@ -41,7 +43,7 @@ type DealerClientQueryParams struct {
 	Note     *string `query:"note"`
 
 	PropertyInterestsID         *string    `query:"properties_id" mongo:"properties._id" convert:"objectid" array:"properties"`
-	PropertyInterestsPropertyID *string `query:"properties_property_id" mongo:"properties.property_id" convert:"objectid" array:"properties" item:"property_id"`
+	PropertyInterestsPropertyID *string    `query:"properties_property_id" mongo:"properties.property_id" convert:"objectid" array:"properties""`
 	PropertyInterestsStatus     *string    `query:"properties_status" mongo:"properties.status" array:"properties"`
 	PropertyInterestsCreatedAt  *time.Time `query:"properties_created_at" mongo:"properties.created_at" convert:"date" array:"properties"`
 	PropertyInterestsUpdatedAt  *time.Time `query:"properties_updated_at" mongo:"properties.updated_at" convert:"date" array:"properties"`
