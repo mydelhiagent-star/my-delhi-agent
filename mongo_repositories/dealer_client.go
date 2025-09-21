@@ -40,6 +40,7 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 		Name:              dealerClient.Name,
 		Phone:             dealerClient.Phone,
 		Note:              dealerClient.Note,
+		Docs:              dealerClient.Docs,
 		CreatedAt:         time.Now(),
 		UpdatedAt:         time.Now(),
 		PropertyInterests: mongoPropertyInterests,
