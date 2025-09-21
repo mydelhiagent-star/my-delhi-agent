@@ -44,6 +44,7 @@ func main() {
 	// tokenCollection := client.Database(cfg.MongoDB).Collection("token")
 	counterCollection := client.Database(cfg.MongoDB).Collection("counters")
 	dealerClientCollection := client.Database(cfg.MongoDB).Collection("dealer_clients")
+	inquiryCollection := client.Database(cfg.MongoDB).Collection("inquiries")
 
 	// Initialize repositories
 	dealerRepo := mongo_repositories.NewMongoDealerRepository(dealerCollection)
@@ -51,12 +52,13 @@ func main() {
 	propertyRepo := mongo_repositories.NewMongoPropertyRepository(propertyCollection, counterCollection, redisClient)
 	// tokenRepo := mongo_repositories.NewMongoTokenRepository(tokenCollection)
 	dealerClientRepo := mongo_repositories.NewMongoDealerClientRepository(dealerClientCollection)
+	inquiryRepo := mongo_repositories.NewMongoInquiryRepository(inquiryCollection)
 
 	// Initialize services with repositories
 	dealerService := &services.DealerService{
 		DealerRepo: dealerRepo,
 		// TokenRepo:  tokenRepo,
-		JWTSecret:  cfg.JWTSecret,
+		JWTSecret: cfg.JWTSecret,
 	}
 	dealerHandler := &handlers.DealerHandler{Service: dealerService}
 
@@ -71,6 +73,7 @@ func main() {
 	dealerClientService := &services.DealerClientService{
 		Repo: dealerClientRepo,
 	}
+	inquiryService := services.NewInquiryService(inquiryRepo)
 
 	leadHandler := &handlers.LeadHandler{
 		Service:         leadService,
@@ -80,6 +83,7 @@ func main() {
 	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL, DealerService: dealerService}
 
 	dealerClientHandler := &handlers.DealerClientHandler{Service: dealerClientService}
+	inquiryHandler := handlers.NewInquiryHandler(inquiryService)
 
 	cloudfareHandler := &handlers.CloudfareHandler{
 		Service: r2Service,
@@ -124,6 +128,7 @@ func main() {
 	routes.RegisterPropertyRoutes(r, propertyHandler, cfg.JWTSecret)
 	routes.RegisterCloudFareRoutes(r, cloudfareHandler, cfg.JWTSecret)
 	routes.RegisterDealerClientRoutes(r, dealerClientHandler, cfg.JWTSecret)
+	routes.SetupInquiryRoutes(r, inquiryHandler)
 
 	corsHandler := h.CORS(
 		h.AllowedOrigins([]string{"*"}),
