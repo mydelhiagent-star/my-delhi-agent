@@ -43,7 +43,7 @@ type DealerClientQueryParams struct {
 	Note     *string `query:"note"`
 
 	PropertyInterestsID         *string    `query:"properties_id" mongo:"properties._id" convert:"objectid" array:"properties"`
-	PropertyInterestsPropertyID *string    `query:"properties_property_id" mongo:"properties.property_id" convert:"objectid" array:"properties""`
+	PropertyInterestsPropertyID *string    `query:"properties_property_id" mongo:"properties.property_id" convert:"objectid" array:"properties"`
 	PropertyInterestsStatus     *string    `query:"properties_status" mongo:"properties.status" array:"properties"`
 	PropertyInterestsCreatedAt  *time.Time `query:"properties_created_at" mongo:"properties.created_at" convert:"date" array:"properties"`
 	PropertyInterestsUpdatedAt  *time.Time `query:"properties_updated_at" mongo:"properties.updated_at" convert:"date" array:"properties"`
