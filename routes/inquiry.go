@@ -2,7 +2,7 @@ package routes
 
 import (
 	"myapp/handlers"
-	"myapp/middlewares"
+	
 
 	"github.com/gorilla/mux"
 )
