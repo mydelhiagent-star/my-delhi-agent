@@ -82,7 +82,7 @@ func main() {
 
 	propertyHandler := &handlers.PropertyHandler{Service: propertyService, CloudflarePublicURL: cfg.CloudflarePublicURL, DealerService: dealerService}
 
-	dealerClientHandler := &handlers.DealerClientHandler{Service: dealerClientService}
+	dealerClientHandler := &handlers.DealerClientHandler{Service: dealerClientService, CloudflarePublicURL: cfg.CloudflarePublicURL}
 	inquiryHandler := handlers.NewInquiryHandler(inquiryService)
 
 	cloudfareHandler := &handlers.CloudfareHandler{

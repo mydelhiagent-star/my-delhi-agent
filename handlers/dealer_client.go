@@ -14,7 +14,8 @@ import (
 )
 
 type DealerClientHandler struct {
-	Service *services.DealerClientService
+	Service             *services.DealerClientService
+	CloudflarePublicURL string
 }
 
 func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +32,14 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 	}
 
 	dealerClient.DealerID = dealerIDObj.Hex()
+
+	// Process document URLs - add Cloudflare public URL prefix
+	publicURLPrefix := h.CloudflarePublicURL
+	for i, docKey := range dealerClient.Docs {
+		if docKey != "" {
+			dealerClient.Docs[i] = publicURLPrefix + docKey
+		}
+	}
 
 	_, err = h.Service.CreateDealerClient(r.Context(), dealerClient)
 	if err != nil {
@@ -56,15 +65,13 @@ func (h *DealerClientHandler) GetDealerClients(w http.ResponseWriter, r *http.Re
 	}
 	var params models.DealerClientQueryParams
 	if err := utils.ParseQueryParams(r, &params); err != nil {
-        http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
-        return
-    }
+		http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	params.DealerID = &dealerID
 
 	fields := utils.ParseFieldSelection(r)
-
-	
 
 	dealerClients, err := h.Service.GetDealerClients(r.Context(), params, fields)
 	if err != nil {
@@ -94,9 +101,16 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 		return
 	}
 
-	
+	// Process document URLs - add Cloudflare public URL prefix
+	if dealerClientUpdate.Docs != nil {
+		publicURLPrefix := h.CloudflarePublicURL
+		for i, docKey := range *dealerClientUpdate.Docs {
+			if docKey != "" {
+				(*dealerClientUpdate.Docs)[i] = publicURLPrefix + docKey
+			}
+		}
+	}
 
-	
 	err = h.Service.UpdateDealerClient(r.Context(), objID.Hex(), dealerClientUpdate)
 	if err != nil {
 		response.WithInternalError(w, r, "Failed to update client. Please try again later.")
@@ -124,8 +138,6 @@ func (h *DealerClientHandler) DeleteDealerClient(w http.ResponseWriter, r *http.
 	}
 	response.WithMessage(w, r, "Dealer client deleted successfully")
 }
-
-
 
 func (h *DealerClientHandler) CreateDealerClientPropertyInterest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -157,28 +169,28 @@ func (h *DealerClientHandler) CreateDealerClientPropertyInterest(w http.Response
 }
 
 func (h *DealerClientHandler) UpdateDealerClientPropertyInterest(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    dealerClientID := vars["dealerClientID"]
-    propertyInterestID := vars["propertyInterestID"]
-    
-    if dealerClientID == "" || propertyInterestID == "" {
-        http.Error(w, "Missing IDs", http.StatusBadRequest)
-        return
-    }
-    
-    var update models.DealerClientPropertyInterestUpdate
-    if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-        http.Error(w, "Invalid request body", http.StatusBadRequest)
-        return
-    }
-    
-    err := h.Service.UpdateDealerClientPropertyInterest(r.Context(), dealerClientID, propertyInterestID, update)
-    if err != nil {
-        response.WithInternalError(w, r, "Failed to update property interest")
-        return
-    }
-    
-    response.WithMessage(w, r, "Property interest updated successfully")
+	vars := mux.Vars(r)
+	dealerClientID := vars["dealerClientID"]
+	propertyInterestID := vars["propertyInterestID"]
+
+	if dealerClientID == "" || propertyInterestID == "" {
+		http.Error(w, "Missing IDs", http.StatusBadRequest)
+		return
+	}
+
+	var update models.DealerClientPropertyInterestUpdate
+	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := h.Service.UpdateDealerClientPropertyInterest(r.Context(), dealerClientID, propertyInterestID, update)
+	if err != nil {
+		response.WithInternalError(w, r, "Failed to update property interest")
+		return
+	}
+
+	response.WithMessage(w, r, "Property interest updated successfully")
 }
 
 func (h *DealerClientHandler) DeleteDealerClientPropertyInterest(w http.ResponseWriter, r *http.Request) {
