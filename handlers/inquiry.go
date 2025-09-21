@@ -30,9 +30,9 @@ func (h *InquiryHandler) CreateInquiry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set source and dealer_id based on authentication
+	
 	if userID := r.Context().Value(middlewares.UserIDKey); userID != nil {
-		inquiry.Source = "dealer_portal"
+		inquiry.Source = "dealer"
 		if dealerID, ok := userID.(string); ok && dealerID != "" {
 			inquiry.DealerID = &dealerID
 		}
