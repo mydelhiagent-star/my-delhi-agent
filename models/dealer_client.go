@@ -5,7 +5,6 @@ import "time"
 type Document struct {
 	URL  string `json:"url"`
 	Type string `json:"type"`
-	Name string `json:"name"`
 	Size int64  `json:"size"`
 }
 

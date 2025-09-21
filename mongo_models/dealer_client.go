@@ -9,7 +9,6 @@ import (
 type Document struct {
 	URL  string `bson:"url"`
 	Type string `bson:"type"`
-	Name string `bson:"name"`
 	Size int64  `bson:"size"`
 }
 
@@ -38,5 +37,11 @@ type DealerClientUpdate struct {
 	Name  *string     `bson:"name"`
 	Phone *string     `bson:"phone"`
 	Note  *string     `bson:"note"`
-	Docs  *[]Document `bson:"docs"`
+	Docs  *[]DocumentUpdate `bson:"docs"`
+}
+
+type DocumentUpdate struct {
+	URL  *string `bson:"url"`
+	Type *string `bson:"type"`
+	Size *int64  `bson:"size"`
 }

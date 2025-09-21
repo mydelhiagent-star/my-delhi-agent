@@ -36,8 +36,8 @@ func (h *DealerClientHandler) CreateDealerClient(w http.ResponseWriter, r *http.
 	// Process document URLs - add Cloudflare public URL prefix
 	publicURLPrefix := h.CloudflarePublicURL
 	for i, docKey := range dealerClient.Docs {
-		if docKey != "" {
-			dealerClient.Docs[i] = publicURLPrefix + docKey
+		if docKey.URL != "" {
+			dealerClient.Docs[i].URL = publicURLPrefix + docKey.URL
 		}
 	}
 
@@ -105,8 +105,8 @@ func (h *DealerClientHandler) UpdateDealerClient(w http.ResponseWriter, r *http.
 	if dealerClientUpdate.Docs != nil {
 		publicURLPrefix := h.CloudflarePublicURL
 		for i, docKey := range *dealerClientUpdate.Docs {
-			if docKey != "" {
-				(*dealerClientUpdate.Docs)[i] = publicURLPrefix + docKey
+			if docKey.URL != "" {
+				(*dealerClientUpdate.Docs)[i].URL = publicURLPrefix + docKey.URL
 			}
 		}
 	}

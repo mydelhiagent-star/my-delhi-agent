@@ -14,13 +14,23 @@ func ToDomainDealerClient(mongoDealerClient mongoModels.DealerClient) models.Dea
 		Name:              mongoDealerClient.Name,
 		Phone:             mongoDealerClient.Phone,
 		Note:              mongoDealerClient.Note,
-		Docs:              mongoDealerClient.Docs,
+		Docs:              ToDomainDealerClientDocs(mongoDealerClient.Docs),
 		PropertyInterests: ToDomainDealerClientPropertyInterestSlice(mongoDealerClient.PropertyInterests),
 		CreatedAt:         mongoDealerClient.CreatedAt,
 		UpdatedAt:         mongoDealerClient.UpdatedAt,
 	}
 }
-
+func ToDomainDealerClientDocs(mongoDocs []mongoModels.Document) []models.Document {
+	docs := make([]models.Document, len(mongoDocs))
+	for i, doc := range mongoDocs {
+		docs[i] = models.Document{
+			URL:  doc.URL,
+			Type: doc.Type,
+			Size: doc.Size,
+		}
+	}
+	return docs
+}
 func ToDomainDealerClientSlice(mongoDealerClients []mongoModels.DealerClient) []models.DealerClient {
 	dealerClients := make([]models.DealerClient, len(mongoDealerClients))
 	for i, mongoDealerClient := range mongoDealerClients {
@@ -75,6 +85,32 @@ func ToMongoDealerClientUpdate(update models.DealerClientUpdate) mongoModels.Dea
 		Name:  update.Name,
 		Phone: update.Phone,
 		Note:  update.Note,
-		Docs:  update.Docs,
+		Docs:  convertDomainDocsToMongoDocs(update.Docs),
 	}
+}
+func convertDomainDocsToMongoDocs(domainDocs *[]models.Document) *[]mongoModels.DocumentUpdate {
+	if domainDocs == nil {
+		return nil
+	}
+	mongoDocs := make([]mongoModels.DocumentUpdate, len(*domainDocs))
+	for i, doc := range *domainDocs {
+		mongoDocs[i] = mongoModels.DocumentUpdate{
+			URL:  &doc.URL,
+			Type: &doc.Type,
+			Size: &doc.Size,
+		}
+	}
+	return &mongoDocs
+}
+
+func ToMongoDealerClientDocs(domainDocs []models.Document) []mongoModels.Document {
+	mongoDocs := make([]mongoModels.Document, len(domainDocs))
+	for i, doc := range domainDocs {
+		mongoDocs[i] = mongoModels.Document{
+			URL:  doc.URL,
+			Type: doc.Type,
+			Size: doc.Size,
+		}
+	}
+	return mongoDocs
 }
