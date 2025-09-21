@@ -2,7 +2,6 @@ package mongo_repositories
 
 import (
 	"context"
-	
 
 	"myapp/converters"
 	"myapp/models"
@@ -36,18 +35,16 @@ func (r *MongoDealerClientRepository) Create(ctx context.Context, dealerClient m
 
 	mongoPropertyInterests := converters.ToMongoDealerClientPropertyInterestSlice(dealerClient.PropertyInterests)
 
-	
-
 	mongoDealerClient := mongoModels.DealerClient{
-		DealerID:   dealerObjectID,
-		Name:       dealerClient.Name,
-		Phone:      dealerClient.Phone,
-		Note:       dealerClient.Note,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		DealerID:          dealerObjectID,
+		Name:              dealerClient.Name,
+		Phone:             dealerClient.Phone,
+		Note:              dealerClient.Note,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 		PropertyInterests: mongoPropertyInterests,
 	}
-	
+
 	result, err := r.dealerClientCollection.InsertOne(ctx, mongoDealerClient)
 	if err != nil {
 		return "", err
@@ -69,9 +66,9 @@ func (r *MongoDealerClientRepository) GetByID(ctx context.Context, id string) (m
 }
 
 func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
-	
+
 	filter := utils.BuildMongoFilter(params)
-	
+
 	if *params.Aggregation {
 		return r.getDealerClientsWithAggregation(ctx, filter, params, fields)
 	}
@@ -83,13 +80,12 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 		sortValue = -1
 	}
 
-
 	opts := options.Find().
 		SetSort(bson.M{*params.Sort: sortValue}).
 		SetSkip(int64(skip)).
-		SetLimit(int64(limit)+1).
+		SetLimit(int64(limit) + 1).
 		SetBatchSize(100)
-	
+
 	if len(fields) > 0 {
 		opts.SetProjection(utils.BuildMongoProjection(fields))
 	}
@@ -107,10 +103,9 @@ func (r *MongoDealerClientRepository) GetDealerClients(ctx context.Context, para
 	return converters.ToDomainDealerClientSlice(mongoDealerClients), nil
 }
 
-
 func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx context.Context, filter bson.M, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
 	skip := int64((*params.Page - 1) * *params.Limit)
-	limit := int64(*params.Limit + 1) 
+	limit := int64(*params.Limit + 1)
 	sort := *params.Sort
 	sortValue := 1
 	if *params.Order == "desc" {
@@ -120,10 +115,9 @@ func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx contex
 	if len(fields) > 0 {
 		projection = utils.BuildMongoProjection(fields)
 	}
-	
-	
+
 	pipeline := utils.BuildAggregationPipeline(filter, sort, sortValue, skip, limit, projection)
-	
+
 	cursor, err := r.dealerClientCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
@@ -137,25 +131,14 @@ func (r *MongoDealerClientRepository) getDealerClientsWithAggregation(ctx contex
 	return converters.ToDomainDealerClientSlice(mongoDealerClients), nil
 }
 
-
-
-
-
 func (r *MongoDealerClientRepository) Update(ctx context.Context, id string, updates models.DealerClientUpdate) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
-	updateDoc := bson.M{}
-	if updates.Name != nil {
-		updateDoc["name"] = *updates.Name
-	}
-	if updates.Phone != nil {
-		updateDoc["phone"] = *updates.Phone
-	}
-	if updates.Note != nil {
-		updateDoc["note"] = *updates.Note
-	}
+
+	mongoUpdate := converters.ToMongoDealerClientUpdate(updates)
+	updateDoc := utils.BuildUpdateDocument(mongoUpdate)
 	updateDoc["updated_at"] = time.Now()
 	update := bson.M{"$set": updateDoc}
 	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
@@ -180,11 +163,9 @@ func (r *MongoDealerClientRepository) CheckPhoneExistsForDealer(ctx context.Cont
 		return false, err
 	}
 
-	
-
 	filter := bson.M{
-		"dealer_id":   dealerObjectID,
-		"phone":       phone,
+		"dealer_id": dealerObjectID,
+		"phone":     phone,
 	}
 
 	count, err := r.dealerClientCollection.CountDocuments(ctx, filter)
@@ -204,7 +185,6 @@ func (r *MongoDealerClientRepository) UpdateStatus(ctx context.Context, id strin
 	_, err = r.dealerClientCollection.UpdateByID(ctx, objectID, update)
 	return err
 }
-
 
 func (r *MongoDealerClientRepository) CreateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, dealerClientPropertyInterest models.DealerClientPropertyInterest) error {
 	objectID, err := primitive.ObjectIDFromHex(dealerClientID)
@@ -232,7 +212,7 @@ func (r *MongoDealerClientRepository) CheckPropertyInterestExists(ctx context.Co
 	}
 
 	filter := bson.M{
-		"_id": objectID,
+		"_id":                    objectID,
 		"properties.property_id": propertyObjectID,
 	}
 
@@ -244,40 +224,37 @@ func (r *MongoDealerClientRepository) CheckPropertyInterestExists(ctx context.Co
 }
 
 func (r *MongoDealerClientRepository) UpdateDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string, update models.DealerClientPropertyInterestUpdate) error {
-    objectID, err := primitive.ObjectIDFromHex(dealerClientID)
-    if err != nil {
-        return err
-    }
-    propertyInterestObjectID, err := primitive.ObjectIDFromHex(propertyInterestID)
-    if err != nil {
-        return err
-    }
-    
-    
-    
-    // ✅ Correct filter
-    filter := bson.M{
-        "_id": objectID,
-        "properties.property_id": propertyInterestObjectID,  
-    }
+	objectID, err := primitive.ObjectIDFromHex(dealerClientID)
+	if err != nil {
+		return err
+	}
+	propertyInterestObjectID, err := primitive.ObjectIDFromHex(propertyInterestID)
+	if err != nil {
+		return err
+	}
 
-    // ✅ Conditional updates
-    updateDoc := bson.M{}
-    if update.Note != nil {
-        updateDoc["properties.$.note"] = *update.Note
-    }
-    if update.Status != nil {
-        updateDoc["properties.$.status"] = *update.Status
-    }
-    updateDoc["updated_at"] = time.Now()
-    
-   
-    if len(updateDoc) > 0 {
-        _, err = r.dealerClientCollection.UpdateOne(ctx, filter, bson.M{"$set": updateDoc})
-        return err
-    }
-    
-    return nil
+	// ✅ Correct filter
+	filter := bson.M{
+		"_id":                    objectID,
+		"properties.property_id": propertyInterestObjectID,
+	}
+
+	// ✅ Conditional updates
+	updateDoc := bson.M{}
+	if update.Note != nil {
+		updateDoc["properties.$.note"] = *update.Note
+	}
+	if update.Status != nil {
+		updateDoc["properties.$.status"] = *update.Status
+	}
+	updateDoc["updated_at"] = time.Now()
+
+	if len(updateDoc) > 0 {
+		_, err = r.dealerClientCollection.UpdateOne(ctx, filter, bson.M{"$set": updateDoc})
+		return err
+	}
+
+	return nil
 }
 
 func (r *MongoDealerClientRepository) DeleteDealerClientPropertyInterest(ctx context.Context, dealerClientID string, propertyInterestID string) error {
@@ -290,7 +267,7 @@ func (r *MongoDealerClientRepository) DeleteDealerClientPropertyInterest(ctx con
 		return err
 	}
 	filter := bson.M{
-		"_id": objectID,
+		"_id":                    objectID,
 		"properties.property_id": propertyInterestObjectID,
 	}
 	_, err = r.dealerClientCollection.UpdateOne(ctx, filter, bson.M{"$pull": bson.M{"properties": bson.M{"property_id": propertyInterestObjectID}}})

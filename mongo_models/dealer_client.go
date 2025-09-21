@@ -12,6 +12,7 @@ type DealerClient struct {
 	Name              string                         `bson:"name"`
 	Phone             string                         `bson:"phone"`
 	Note              string                         `bson:"note"`
+	Docs              []string                       `bson:"docs,omitempty"`
 	PropertyInterests []DealerClientPropertyInterest `bson:"properties,omitempty"`
 	CreatedAt         time.Time                      `bson:"created_at"`
 	UpdatedAt         time.Time                      `bson:"updated_at"`
@@ -26,3 +27,9 @@ type DealerClientPropertyInterest struct {
 	UpdatedAt  time.Time          `bson:"updated_at"`
 }
 
+type DealerClientUpdate struct {
+	Name  *string   `bson:"name"`
+	Phone *string   `bson:"phone"`
+	Note  *string   `bson:"note"`
+	Docs  *[]string `bson:"docs"`
+}

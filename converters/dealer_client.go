@@ -9,14 +9,15 @@ import (
 
 func ToDomainDealerClient(mongoDealerClient mongoModels.DealerClient) models.DealerClient {
 	return models.DealerClient{
-		ID: mongoDealerClient.ID.Hex(),
-		DealerID: mongoDealerClient.DealerID.Hex(),
-		Name: mongoDealerClient.Name,
-		Phone: mongoDealerClient.Phone,
-		Note: mongoDealerClient.Note,
+		ID:                mongoDealerClient.ID.Hex(),
+		DealerID:          mongoDealerClient.DealerID.Hex(),
+		Name:              mongoDealerClient.Name,
+		Phone:             mongoDealerClient.Phone,
+		Note:              mongoDealerClient.Note,
+		Docs:              mongoDealerClient.Docs,
 		PropertyInterests: ToDomainDealerClientPropertyInterestSlice(mongoDealerClient.PropertyInterests),
-		CreatedAt: mongoDealerClient.CreatedAt,
-		UpdatedAt: mongoDealerClient.UpdatedAt,
+		CreatedAt:         mongoDealerClient.CreatedAt,
+		UpdatedAt:         mongoDealerClient.UpdatedAt,
 	}
 }
 
@@ -28,7 +29,7 @@ func ToDomainDealerClientSlice(mongoDealerClients []mongoModels.DealerClient) []
 	return dealerClients
 }
 
-func ToDomainDealerClientPropertyInterestSlice(mongoDealerClientPropertyInterests []mongoModels.DealerClientPropertyInterest) []models.DealerClientPropertyInterest {	
+func ToDomainDealerClientPropertyInterestSlice(mongoDealerClientPropertyInterests []mongoModels.DealerClientPropertyInterest) []models.DealerClientPropertyInterest {
 	dealerClientPropertyInterests := make([]models.DealerClientPropertyInterest, len(mongoDealerClientPropertyInterests))
 	for i, mongoDealerClientPropertyInterest := range mongoDealerClientPropertyInterests {
 		dealerClientPropertyInterests[i] = ToDomainDealerClientPropertyInterest(mongoDealerClientPropertyInterest)
@@ -38,28 +39,27 @@ func ToDomainDealerClientPropertyInterestSlice(mongoDealerClientPropertyInterest
 
 func ToDomainDealerClientPropertyInterest(mongoDealerClientPropertyInterest mongoModels.DealerClientPropertyInterest) models.DealerClientPropertyInterest {
 	return models.DealerClientPropertyInterest{
-		ID: mongoDealerClientPropertyInterest.ID.Hex(),
+		ID:         mongoDealerClientPropertyInterest.ID.Hex(),
 		PropertyID: mongoDealerClientPropertyInterest.PropertyID.Hex(),
-		Note: mongoDealerClientPropertyInterest.Note,
-		Status: mongoDealerClientPropertyInterest.Status,
-		CreatedAt: mongoDealerClientPropertyInterest.CreatedAt,
-		UpdatedAt: mongoDealerClientPropertyInterest.UpdatedAt,
+		Note:       mongoDealerClientPropertyInterest.Note,
+		Status:     mongoDealerClientPropertyInterest.Status,
+		CreatedAt:  mongoDealerClientPropertyInterest.CreatedAt,
+		UpdatedAt:  mongoDealerClientPropertyInterest.UpdatedAt,
 	}
 }
 
-
 func ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest models.DealerClientPropertyInterest) mongoModels.DealerClientPropertyInterest {
-    
-    propertyObjectID, _ := primitive.ObjectIDFromHex(dealerClientPropertyInterest.PropertyID)
-    createdAt, updatedAt := CreationTimestamps()
-    return mongoModels.DealerClientPropertyInterest{
-        ID:         primitive.NewObjectID(), 
-        PropertyID: propertyObjectID,       
-        Note:       dealerClientPropertyInterest.Note,
-        Status:     dealerClientPropertyInterest.Status,
-        CreatedAt:  createdAt,              
-        UpdatedAt:  updatedAt,             
-    }
+
+	propertyObjectID, _ := primitive.ObjectIDFromHex(dealerClientPropertyInterest.PropertyID)
+	createdAt, updatedAt := CreationTimestamps()
+	return mongoModels.DealerClientPropertyInterest{
+		ID:         primitive.NewObjectID(),
+		PropertyID: propertyObjectID,
+		Note:       dealerClientPropertyInterest.Note,
+		Status:     dealerClientPropertyInterest.Status,
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+	}
 }
 
 func ToMongoDealerClientPropertyInterestSlice(dealerClientPropertyInterests []models.DealerClientPropertyInterest) []mongoModels.DealerClientPropertyInterest {
@@ -68,4 +68,13 @@ func ToMongoDealerClientPropertyInterestSlice(dealerClientPropertyInterests []mo
 		mongoPropertyInterests[i] = ToMongoDealerClientPropertyInterest(dealerClientPropertyInterest)
 	}
 	return mongoPropertyInterests
+}
+
+func ToMongoDealerClientUpdate(update models.DealerClientUpdate) mongoModels.DealerClientUpdate {
+	return mongoModels.DealerClientUpdate{
+		Name:  update.Name,
+		Phone: update.Phone,
+		Note:  update.Note,
+		Docs:  update.Docs,
+	}
 }
