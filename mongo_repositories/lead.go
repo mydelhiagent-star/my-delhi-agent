@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"myapp/converters"
 	"myapp/models"
 	mongoModels "myapp/mongo_models"
 	"myapp/repositories"
+	"myapp/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoLeadRepository struct {
@@ -127,16 +130,21 @@ func (r *MongoLeadRepository) GetByDealerID(ctx context.Context, dealerID string
 	return leads, nil
 }
 
-func (r *MongoLeadRepository) GetLeads(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error) {
-	skip := (page - 1) * limit
-
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: filter}},
-		{{Key: "$skip", Value: int64(skip)}},
-		{{Key: "$limit", Value: int64(limit)}},
+func (r *MongoLeadRepository) GetLeads(ctx context.Context, params models.LeadQueryParams) ([]models.Lead, error) {
+	params.SetDefaults()
+	filter := utils.BuildMongoFilter(params)
+	skip := (*params.Page - 1) * *params.Limit
+	limit := *params.Limit
+	sortValue := 1
+	if *params.Order == "desc" {
+		sortValue = -1
 	}
-
-	cursor, err := r.leadCollection.Aggregate(ctx, pipeline)
+	opts := options.Find().
+		SetSort(bson.M{*params.Sort: sortValue}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit))
+	
+	cursor, err := r.leadCollection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -147,20 +155,11 @@ func (r *MongoLeadRepository) GetLeads(ctx context.Context, filter map[string]in
 		return nil, err
 	}
 
-	// Convert mongoModels.Lead to models.LeadData
-	var leads []models.Lead
-	for _, mongoLead := range mongoLeads {
-		leads = append(leads, models.Lead{
-			ID:           mongoLead.ID.Hex(),
-			Name:         mongoLead.Name,
-			Phone:        mongoLead.Phone,
-			Requirement:  mongoLead.Requirement,
-			AadharNumber: mongoLead.AadharNumber,
-			AadharPhoto:  mongoLead.AadharPhoto,
-		})
-	}
-	return leads, nil
+	return converters.ToDomainLeadSlice(mongoLeads), nil
 }
+
+	
+
 
 func (r *MongoLeadRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
