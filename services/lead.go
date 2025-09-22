@@ -29,9 +29,7 @@ func (s *LeadService) GetLeadByID(ctx context.Context, id string) (models.Lead, 
 	return s.Repo.GetByID(ctx, id)
 }
 
-func (s *LeadService) GetAllLeads(ctx context.Context) ([]models.Lead, error) {
-	return s.Repo.GetAll(ctx)
-}
+
 
 func (s *LeadService) GetAllLeadsByDealerID(ctx context.Context, dealerID string) ([]models.Lead, error) {
 	return s.Repo.GetByDealerID(ctx, dealerID)

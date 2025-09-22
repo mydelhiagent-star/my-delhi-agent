@@ -69,14 +69,7 @@ func (h *LeadHandler) GetLead(w http.ResponseWriter, r *http.Request) {
 	response.WithPayload(w, r, lead)
 }
 
-func (h *LeadHandler) GetAllLeads(w http.ResponseWriter, r *http.Request) {
-	leads, err := h.Service.GetAllLeads(r.Context())
-	if err != nil {
-		response.WithInternalError(w, r, "Failed to fetch leads: "+err.Error())
-		return
-	}
-	response.WithPayload(w, r, leads)
-}
+
 
 func (h *LeadHandler) GetAllLeadsByDealerID(w http.ResponseWriter, r *http.Request) {
 	dealerID := r.URL.Query().Get("dealer_id")
