@@ -52,9 +52,6 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID string, pr
 }
 
 func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParams) ([]models.Lead, error) {
-	// Validate inputs
-	
-
 	return s.Repo.GetLeads(ctx, params)
 }
 
