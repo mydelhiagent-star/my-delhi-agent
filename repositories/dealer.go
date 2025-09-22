@@ -17,4 +17,5 @@ type DealerRepository interface {
 	Update(ctx context.Context, id string, updates map[string]interface{}) error
 	Delete(ctx context.Context, id string) error
 	Exists(ctx context.Context, id string) (bool, error)
+	GetDealerWithProperties(ctx context.Context, subLocation string) ([]map[string]interface{}, error)
 }

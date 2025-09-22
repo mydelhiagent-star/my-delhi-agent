@@ -189,3 +189,36 @@ func (r *MongoDealerRepository) GetLocationsWithSubLocations(ctx context.Context
 
 	return result, nil
 }
+
+func (r *MongoDealerRepository) GetDealerWithProperties(ctx context.Context, subLocation string) ([]map[string]interface{}, error) {
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"sub_location": subLocation,
+			},
+
+		},
+		{
+			"$lookup": bson.M{
+				"from": "property",
+				"localField": "_id",
+				"foreignField": "dealer_id",
+				"as": "properties",
+			},
+		},
+	}
+		
+		
+	cursor, err := r.dealerCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var results []map[string]interface{}
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}

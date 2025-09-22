@@ -103,7 +103,7 @@ func (s *DealerService) DealerExists(ctx context.Context, dealerID string) (bool
 func (s *DealerService) GetDealerWithProperties(ctx context.Context, subLocation string) ([]map[string]interface{}, error) {
 	// This would need a complex aggregation pipeline
 	// For now, return empty slice
-	return []map[string]interface{}{}, nil
+	return s.DealerRepo.GetDealerWithProperties(ctx, subLocation)
 }
 
 func (s *DealerService) UpdateDealer(ctx context.Context, id string, updates map[string]interface{}) error {
