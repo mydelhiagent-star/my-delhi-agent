@@ -15,6 +15,21 @@ func ToDomainLeadSlice(mongoLeads []mongoModels.Lead) []models.Lead {
 }
 
 func ToDomainLead(mongoLead mongoModels.Lead) models.Lead {
+	
+	properties := make([]models.PropertyInterest, len(mongoLead.Properties))
+	for i, prop := range mongoLead.Properties {
+		properties[i] = models.PropertyInterest{
+			ID:         prop.PropertyID.Hex(),
+			LeadID:     mongoLead.ID.Hex(),
+			PropertyID: prop.PropertyID.Hex(),
+			DealerID:   prop.DealerID.Hex(),
+			Status:     prop.Status,
+			Note:       prop.Note,
+			CreatedAt:  prop.CreatedAt,
+			UpdatedAt:  prop.CreatedAt, 
+		}
+	}
+
 	return models.Lead{
 		ID:           mongoLead.ID.Hex(),
 		Name:         mongoLead.Name,
@@ -22,6 +37,8 @@ func ToDomainLead(mongoLead mongoModels.Lead) models.Lead {
 		Requirement:  mongoLead.Requirement,
 		AadharNumber: mongoLead.AadharNumber,
 		AadharPhoto:  mongoLead.AadharPhoto,
+		Properties:   properties,       
+		     
 	}
 }
 

@@ -184,11 +184,7 @@ func (h *LeadHandler) GetLeads(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userRole, ok := r.Context().Value(middlewares.UserRoleKey).(string)
-	if !ok || userRole != "admin" {
-		http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
-		return
-	}
+	
 
 	var params models.LeadQueryParams
 	if err := utils.ParseQueryParams(r, &params); err != nil {
