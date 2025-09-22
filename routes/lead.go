@@ -14,15 +14,14 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 	leadRouter.HandleFunc("", h.GetLeads).Methods("GET")
 	leadRouter.HandleFunc("/{leadID}/property-details", h.GetLeadPropertyDetails).Methods("GET")
 
-	dealerRouter := leadRouter.PathPrefix("/dealer").Subrouter()
-	dealerRouter.Use(middlewares.RequireRole("dealer"))
+	
 	
 
 	// Admin-only route
 	adminRouter := leadRouter.PathPrefix("/admin").Subrouter()
 	adminRouter.Use(middlewares.RequireRole("admin"))
 	adminRouter.HandleFunc("/", h.CreateLead).Methods("POST")
-	adminRouter.HandleFunc("/", h.GetAllLeads).Methods("GET")
+	
 	adminRouter.HandleFunc("/{leadID}", h.DeleteLead).Methods("DELETE")
 	adminRouter.HandleFunc("/{leadID}", h.UpdateLead).Methods("PUT")
 	adminRouter.HandleFunc("/{leadID}/properties", h.AddPropertyInterest).Methods("POST")
