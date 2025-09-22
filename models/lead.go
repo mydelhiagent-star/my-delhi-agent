@@ -26,6 +26,20 @@ type PropertyInterest struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+// models/lead.go
+type LeadQueryParams struct {
+	ID          *string    `query:"id" mongo:"_id" convert:"objectid"`
+	Name        *string    `query:"name" mongo:"name"`
+	Phone       *string    `query:"phone" mongo:"phone"`
+	AadharNumber *string   `query:"aadhar_number" mongo:"aadhar_number"`
+	DealerID    *string    `query:"dealer_id" mongo:"properties.dealer_id" convert:"objectid" array:"properties"`
+	PropertyID  *string    `query:"property_id" mongo:"properties.property_id" convert:"objectid" array:"properties"`
+	Status      *string    `query:"status" mongo:"status"`
+	CreatedAt   *time.Time `query:"created_at" mongo:"created_at" convert:"date"`
+	UpdatedAt   *time.Time `query:"updated_at" mongo:"updated_at" convert:"date"`
+	BaseQueryParams
+}
+
 
 const (
 	LeadStatusView         = "view"
