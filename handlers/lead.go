@@ -200,14 +200,6 @@ func (h *LeadHandler) GetLeads(w http.ResponseWriter, r *http.Request) {
 
 	response.WithPayload(w, r, leads)	
 
-	
-
-	
-
-	
-
-	
-
 }
 
 
