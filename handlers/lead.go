@@ -214,66 +214,7 @@ func (h *LeadHandler) GetLeads(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *LeadHandler) GetLeadPropertyDetails(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 
-	leadID := vars["leadID"]
-
-	if leadID == "" {
-		http.Error(w, "Missing lead ID", http.StatusBadRequest)
-		return
-	}
-
-	objID, err := primitive.ObjectIDFromHex(leadID)
-
-	if err != nil {
-		http.Error(w, "Invalid lead ID", http.StatusBadRequest)
-		return
-	}
-
-	properties, err := h.Service.GetLeadPropertyDetails(r.Context(), objID.Hex())
-
-	if err != nil {
-		http.Error(w, "Failed to fetch lead with details", http.StatusInternalServerError)
-		return
-	}
-
-	if status := r.URL.Query().Get("status"); status != "" {
-		filteredByStatus := make([]map[string]interface{}, 0)
-		for _, property := range properties {
-			if propStatus, ok := property["status"].(string); ok {
-				if propStatus == status {
-					filteredByStatus = append(filteredByStatus, property)
-				}
-			}
-		}
-		properties = filteredByStatus
-	}
-
-	userID := r.Context().Value(middlewares.UserIDKey).(string)
-	userRole := r.Context().Value(middlewares.UserRoleKey).(string)
-
-	if userRole == "dealer" {
-		filteredProperties := make([]map[string]interface{}, 0) // ← Change to []bson.M
-		dealerID, err := primitive.ObjectIDFromHex(userID)
-		if err != nil {
-			http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
-			return
-		}
-		for _, property := range properties {
-			// ← Handle ObjectID type correctly
-			if propDealerID, ok := property["dealer_id"].(primitive.ObjectID); ok {
-				if propDealerID == dealerID {
-					filteredProperties = append(filteredProperties, property)
-				}
-			}
-		}
-		properties = filteredProperties
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(properties)
-}
 
 
 

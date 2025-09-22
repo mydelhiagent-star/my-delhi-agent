@@ -15,6 +15,6 @@ type LeadRepository interface {
 	Delete(ctx context.Context, id string) error
 	AddPropertyInterest(ctx context.Context, leadID string, propertyInterest models.PropertyInterest) error
 	UpdatePropertyInterest(ctx context.Context, leadID, propertyID string, status, note string) error
-	GetLeadPropertyDetails(ctx context.Context, leadID string) ([]map[string]interface{}, error)
+	
 	CheckPhoneExists(ctx context.Context, phone string) (bool, error)
 }

@@ -266,52 +266,6 @@ func (r *MongoLeadRepository) UpdatePropertyInterest(ctx context.Context, leadID
 	return nil
 }
 
-func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID string) ([]map[string]interface{}, error) {
-	leadObjectID, err := primitive.ObjectIDFromHex(leadID)
-	if err != nil {
-		return nil, err
-	}
-
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{"_id": leadObjectID}}},
-		{{Key: "$unwind", Value: "$properties"}},
-		{{Key: "$lookup", Value: bson.M{
-			"from":         "property",
-			"localField":   "properties.property_id",
-			"foreignField": "_id",
-			"as":           "property_details",
-		}}},
-		{{Key: "$unwind", Value: "$property_details"}},
-		{{Key: "$project", Value: bson.M{
-			"property_id":   "$properties.property_id",
-			"dealer_id":     "$properties.dealer_id",
-			"status":        "$properties.status",
-			"note":          "$properties.note",
-			"created_at":    "$properties.created_at",
-			"title":         "$property_details.title",
-			"address":       "$property_details.address",
-			"min_price":     "$property_details.min_price",
-			"max_price":     "$property_details.max_price",
-			"photos":        "$property_details.photos",
-			"property_type": "$property_details.property_type",
-			"bedrooms":      "$property_details.bedrooms",
-			"bathrooms":     "$property_details.bathrooms",
-		}}},
-	}
-
-	cursor, err := r.leadCollection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var results []map[string]interface{}
-	if err := cursor.All(ctx, &results); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
 
 
 
