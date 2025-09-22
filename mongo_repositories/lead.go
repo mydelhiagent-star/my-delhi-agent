@@ -313,52 +313,7 @@ func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID
 	return results, nil
 }
 
-func (r *MongoLeadRepository) GetDealerLeads(ctx context.Context, dealerID string) ([]models.Lead, error) {
-	dealerObjectID, err := primitive.ObjectIDFromHex(dealerID)
-	if err != nil {
-		return nil, err
-	}
 
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{
-			"properties.dealer_id": dealerObjectID,
-		}}},
-		{{Key: "$addFields", Value: bson.M{
-			"properties": bson.M{
-				"$filter": bson.M{
-					"input": "$properties",
-					"cond":  bson.M{"$eq": []interface{}{"$$this.dealer_id", dealerObjectID}},
-				},
-			},
-		}}},
-	}
-
-	cursor, err := r.leadCollection.Aggregate(ctx, pipeline)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var mongoLeads []mongoModels.Lead
-	if err := cursor.All(ctx, &mongoLeads); err != nil {
-		return nil, err
-	}
-
-	// Convert mongoModels.Lead to models.LeadData
-	var leads []models.Lead
-	for _, mongoLead := range mongoLeads {
-		leads = append(leads, models.Lead{
-			ID:           mongoLead.ID.Hex(),
-			Name:         mongoLead.Name,
-			Phone:        mongoLead.Phone,
-			Requirement:  mongoLead.Requirement,
-			AadharNumber: mongoLead.AadharNumber,
-			AadharPhoto:  mongoLead.AadharPhoto,
-		})
-	}
-
-	return leads, nil
-}
 
 func (r *MongoLeadRepository) GetPropertyDetails(ctx context.Context, soldStr, deletedStr string) ([]map[string]interface{}, error) {
 	filter := bson.M{}

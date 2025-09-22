@@ -72,6 +72,3 @@ func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID string,
 	return s.Repo.UpdatePropertyInterest(ctx, leadID, propertyID, status, note)
 }
 
-func (s *LeadService) GetDealerLeads(ctx context.Context, dealerID string) ([]models.Lead, error) {
-	return s.Repo.GetDealerLeads(ctx, dealerID)
-}

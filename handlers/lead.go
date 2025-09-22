@@ -405,30 +405,4 @@ func (h *LeadHandler) UpdatePropertyInterest(w http.ResponseWriter, r *http.Requ
 	})
 }
 
-func (h *LeadHandler) GetDealerLeads(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(middlewares.UserIDKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: Missing user ID", http.StatusUnauthorized)
-		return
-	}
 
-	userRole, ok := r.Context().Value(middlewares.UserRoleKey).(string)
-	if !ok || userRole != "dealer" {
-		http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
-		return
-	}
-
-	dealerID, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		http.Error(w, "Invalid dealer ID", http.StatusBadRequest)
-		return
-	}
-
-	leads, err := h.Service.GetDealerLeads(r.Context(), dealerID.Hex())
-	if err != nil {
-		http.Error(w, "Failed to fetch dealer leads", http.StatusInternalServerError)
-		return
-	}
-
-	response.WithPayload(w, r, leads)
-}

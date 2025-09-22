@@ -16,7 +16,7 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 
 	dealerRouter := leadRouter.PathPrefix("/dealer").Subrouter()
 	dealerRouter.Use(middlewares.RequireRole("dealer"))
-	dealerRouter.HandleFunc("/", h.GetDealerLeads).Methods("GET")
+	
 
 	// Admin-only route
 	adminRouter := leadRouter.PathPrefix("/admin").Subrouter()
