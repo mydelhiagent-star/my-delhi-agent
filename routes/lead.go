@@ -11,7 +11,7 @@ func RegisterLeadRoutes(r *mux.Router, h *handlers.LeadHandler, jwtSecret string
 	authMW := middlewares.JWTAuth(jwtSecret)
 	leadRouter := r.PathPrefix("/leads").Subrouter()
 	leadRouter.Use(authMW)
-	leadRouter.HandleFunc("/search", h.SearchLeads).Methods("GET")
+	leadRouter.HandleFunc("/search", h.GetLeads).Methods("GET")
 	leadRouter.HandleFunc("/{leadID}/property-details", h.GetLeadPropertyDetails).Methods("GET")
 
 	dealerRouter := leadRouter.PathPrefix("/dealer").Subrouter()

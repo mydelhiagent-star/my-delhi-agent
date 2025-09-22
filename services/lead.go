@@ -53,7 +53,7 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID string, pr
 	return s.Repo.AddPropertyInterest(ctx, leadID, propertyInterest)
 }
 
-func (s *LeadService) SearchLeads(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error) {
+func (s *LeadService) GetLeads(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error) {
 	// Validate inputs
 	if page < 1 {
 		page = 1
@@ -62,7 +62,7 @@ func (s *LeadService) SearchLeads(ctx context.Context, filter map[string]interfa
 		limit = 20
 	}
 
-	return s.Repo.Search(ctx, filter, page, limit, fields)
+	return s.Repo.GetLeads(ctx, filter, page, limit, fields)
 }
 
 func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID string) ([]map[string]interface{}, error) {

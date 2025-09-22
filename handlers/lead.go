@@ -184,7 +184,7 @@ func (h *LeadHandler) AddPropertyInterest(w http.ResponseWriter, r *http.Request
 	})
 }
 
-func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
+func (h *LeadHandler) GetLeads(w http.ResponseWriter, r *http.Request) {
 	// ← SECURITY: Safe context value extraction
 	userID, ok := r.Context().Value(middlewares.UserIDKey).(string)
 	if !ok || userID == "" {
@@ -337,7 +337,7 @@ func (h *LeadHandler) SearchLeads(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	leads, err := h.Service.SearchLeads(r.Context(), filter, page, limit, fields)
+	leads, err := h.Service.GetLeads(r.Context(), filter, page, limit, fields)
 	if err != nil {
 		http.Error(w, "Failed to search leads: "+err.Error(), http.StatusInternalServerError)
 		return

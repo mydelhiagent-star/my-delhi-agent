@@ -127,7 +127,7 @@ func (r *MongoLeadRepository) GetByDealerID(ctx context.Context, dealerID string
 	return leads, nil
 }
 
-func (r *MongoLeadRepository) Search(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error) {
+func (r *MongoLeadRepository) GetLeads(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error) {
 	skip := (page - 1) * limit
 
 	pipeline := mongo.Pipeline{

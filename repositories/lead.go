@@ -10,7 +10,7 @@ type LeadRepository interface {
 	GetByID(ctx context.Context, id string) (models.Lead, error)
 	GetAll(ctx context.Context) ([]models.Lead, error)
 	GetByDealerID(ctx context.Context, dealerID string) ([]models.Lead, error)
-	Search(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error)
+	GetLeads(ctx context.Context, filter map[string]interface{}, page, limit int, fields []string) ([]models.Lead, error)
 	Update(ctx context.Context, id string, updates map[string]interface{}) error
 	Delete(ctx context.Context, id string) error
 	AddPropertyInterest(ctx context.Context, leadID string, propertyInterest models.PropertyInterest) error
