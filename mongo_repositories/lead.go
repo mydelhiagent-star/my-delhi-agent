@@ -315,38 +315,7 @@ func (r *MongoLeadRepository) GetLeadPropertyDetails(ctx context.Context, leadID
 
 
 
-func (r *MongoLeadRepository) GetPropertyDetails(ctx context.Context, soldStr, deletedStr string) ([]map[string]interface{}, error) {
-	filter := bson.M{}
 
-	if soldStr != "" {
-		if soldStr == "true" {
-			filter["sold"] = true
-		} else if soldStr == "false" {
-			filter["sold"] = bson.M{"$ne": true}
-		}
-	}
-
-	if deletedStr != "" {
-		if deletedStr == "true" {
-			filter["is_deleted"] = true
-		} else if deletedStr == "false" {
-			filter["is_deleted"] = bson.M{"$ne": true}
-		}
-	}
-
-	cursor, err := r.propertyCollection.Find(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var results []map[string]interface{}
-	if err := cursor.All(ctx, &results); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
 
 func (r *MongoLeadRepository) CheckPhoneExists(ctx context.Context, phone string) (bool, error) {
 	count, err := r.leadCollection.CountDocuments(ctx, bson.M{"phone": phone})

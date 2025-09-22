@@ -62,9 +62,6 @@ func (s *LeadService) GetLeadPropertyDetails(ctx context.Context, leadID string)
 	return s.Repo.GetLeadPropertyDetails(ctx, leadID)
 }
 
-func (s *LeadService) GetPropertyDetails(ctx context.Context, soldStr string, deletedStr string) ([]map[string]interface{}, error) {
-	return s.Repo.GetPropertyDetails(ctx, soldStr, deletedStr)
-}
 
 func (s *LeadService) UpdatePropertyInterest(ctx context.Context, leadID string, propertyID string, status string, note string) error {
 	return s.Repo.UpdatePropertyInterest(ctx, leadID, propertyID, status, note)
