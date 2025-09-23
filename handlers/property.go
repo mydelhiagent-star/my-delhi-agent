@@ -119,6 +119,17 @@ func (h *PropertyHandler) UpdateProperty(w http.ResponseWriter, r *http.Request)
 
 
 func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middlewares.UserIDKey).(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: Missing user ID", http.StatusUnauthorized)
+		return
+	}
+	userRole, ok := r.Context().Value(middlewares.UserRoleKey).(string)
+	if !ok || userRole != constants.Dealer {
+		http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
+		return
+	}
+	
 	idParam := mux.Vars(r)["id"]
 	objID, err := primitive.ObjectIDFromHex(idParam)
 	if err != nil {
@@ -126,7 +137,7 @@ func (h *PropertyHandler) DeleteProperty(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.Service.DeleteProperty(objID.Hex()); err != nil {
+	if err := h.Service.DeleteProperty(objID.Hex(), userID); err != nil {
 		response.WithInternalError(w, r, "Failed to delete property")
 		return
 	}

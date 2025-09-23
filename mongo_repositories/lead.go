@@ -132,7 +132,11 @@ func (r *MongoLeadRepository) GetByDealerID(ctx context.Context, dealerID string
 
 func (r *MongoLeadRepository) GetLeads(ctx context.Context, params models.LeadQueryParams) ([]models.Lead, error) {
 	params.SetDefaults()
+	
 	filter := utils.BuildMongoFilter(params)
+	if *params.Aggregation {
+		return r.getLeadsByAggregation(ctx, filter, params, []string{})
+	}
 	skip := (*params.Page - 1) * *params.Limit
 	limit := *params.Limit
 	sortValue := 1
@@ -155,6 +159,34 @@ func (r *MongoLeadRepository) GetLeads(ctx context.Context, params models.LeadQu
 		return nil, err
 	}
 
+	return converters.ToDomainLeadSlice(mongoLeads), nil
+}
+
+func (r *MongoLeadRepository) getLeadsByAggregation(ctx context.Context,filter bson.M, params models.LeadQueryParams,fields []string) ([]models.Lead, error) {
+	skip := int64((*params.Page - 1) * *params.Limit)
+	limit := int64(*params.Limit + 1)
+	sort := *params.Sort
+	sortValue := 1
+	if *params.Order == "desc" {
+		sortValue = -1
+	}
+	var projection bson.M
+	if len(fields) > 0 {
+		projection = utils.BuildMongoProjection(fields)
+	}
+
+	pipeline := utils.BuildAggregationPipeline(filter, sort, sortValue, skip, limit, projection)
+	cursor, err := r.leadCollection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(ctx)
+
+	var mongoLeads []mongoModels.Lead
+	if err := cursor.All(ctx, &mongoLeads); err != nil {
+		return nil, err
+	}
 	return converters.ToDomainLeadSlice(mongoLeads), nil
 }
 

@@ -2,12 +2,12 @@ package services
 
 import (
 	"context"
-	
+	"errors"
+
 	"fmt"
 	"myapp/models"
 	"myapp/repositories"
 	"myapp/utils"
-	
 
 	"github.com/go-redis/redis/v8"
 )
@@ -68,10 +68,14 @@ func (s *PropertyService) UpdateProperty(id string, updates models.PropertyUpdat
 	return nil
 }
 
-func (s *PropertyService) DeleteProperty(id string) error {
+func (s *PropertyService) DeleteProperty(id string, userID string) error {
 	property, err := s.Repo.GetByID(context.Background(), id)
 	if err != nil {
 		return err
+	}
+
+	if property.DealerID != userID {
+		return errors.New("unauthorized: property does not belong to you")
 	}
 
 	err = s.Repo.Delete(context.Background(), id)
