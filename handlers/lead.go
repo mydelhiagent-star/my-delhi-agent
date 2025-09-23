@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"myapp/constants"
 	"myapp/middlewares"
 	"myapp/models"
 	"myapp/response"
@@ -183,6 +184,11 @@ func (h *LeadHandler) GetLeads(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized: Missing user ID", http.StatusUnauthorized)
 		return
 	}
+	userRole, ok := r.Context().Value(middlewares.UserRoleKey).(string)
+	if !ok || userRole == "" {
+		http.Error(w, "Unauthorized: Missing user role", http.StatusUnauthorized)
+		return
+	}
 
 	
 
@@ -190,6 +196,10 @@ func (h *LeadHandler) GetLeads(w http.ResponseWriter, r *http.Request) {
 	if err := utils.ParseQueryParams(r, &params); err != nil {
 		http.Error(w, "Invalid query parameters: "+err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	if userRole == constants.Dealer {
+		params.DealerID = &userID
 	}
 
 	leads, err := h.Service.GetLeads(r.Context(), params)
