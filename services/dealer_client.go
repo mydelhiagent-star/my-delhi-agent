@@ -5,11 +5,14 @@ import (
 	"errors"
 	"myapp/models"
 	"myapp/repositories"
-	
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DealerClientService struct {
 	Repo repositories.DealerClientRepository
+	PropertyRepo repositories.PropertyRepository
 }
 
 func (s *DealerClientService) CheckPhoneExistsForDealer(ctx context.Context, dealerID string, phone string) (bool, error) {
@@ -33,7 +36,69 @@ func (s *DealerClientService) CreateDealerClient(ctx context.Context, dealerClie
 
 func (s *DealerClientService) GetDealerClients(ctx context.Context, params models.DealerClientQueryParams, fields []string) ([]models.DealerClient, error) {
 	params.SetDefaults()
-	return s.Repo.GetDealerClients(ctx, params, fields)
+
+	dealerClients, err := s.Repo.GetDealerClients(ctx, params, fields)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dealerClients) == 0 {
+		return dealerClients, nil
+	}
+
+	
+	propertyIDs := make([]primitive.ObjectID, 0)
+	for _, dealerClient := range dealerClients {
+		for _, propertyInterest := range dealerClient.PropertyInterests {
+			if objectID, err := primitive.ObjectIDFromHex(propertyInterest.PropertyID); err == nil {
+				propertyIDs = append(propertyIDs, objectID)
+			}
+		}
+	}
+	
+	if len(propertyIDs) == 0 {
+		return dealerClients, nil
+	}
+
+	// Find deleted/sold properties
+	filter := bson.M{
+		"_id": bson.M{"$in": propertyIDs},
+		 "$or": bson.A{
+			bson.M{"is_deleted": true},
+			bson.M{"sold": true},
+		},
+	}
+
+	projection := bson.M{
+		"_id": 1,
+	}
+
+	properties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(propertyIDs)), 0)
+	if err != nil {
+		return nil, err
+	}
+
+	
+	propertiesToRemove := make(map[string]bool)
+	for _, property := range properties {
+		propertiesToRemove[property.ID] = true
+	}
+
+	
+	for i := range dealerClients {
+		var filteredInterests []models.DealerClientPropertyInterest
+		
+		for _, interest := range dealerClients[i].PropertyInterests {
+			
+			if !propertiesToRemove[interest.PropertyID] {
+				filteredInterests = append(filteredInterests, interest)
+			}
+		}
+		
+		dealerClients[i].PropertyInterests = filteredInterests
+	}
+
+	return dealerClients, nil
 }
 
 

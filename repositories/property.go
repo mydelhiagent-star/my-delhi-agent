@@ -3,6 +3,8 @@ package repositories
 import (
 	"context"
 	"myapp/models"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type PropertyRepository interface {
@@ -13,4 +15,5 @@ type PropertyRepository interface {
 	Delete(ctx context.Context, id string) error
 	GetNextPropertyNumber(ctx context.Context) (int64, error)
 	GetProperties(ctx context.Context, params models.PropertyQueryParams, fields []string) ([]models.Property, error)
+	GetFilteredProperties(ctx context.Context, filter bson.M, projection bson.M, limit int64, skip int64) ([]models.Property, error)
 }

@@ -182,3 +182,18 @@ func (r *MongoPropertyRepository) GetProperties(ctx context.Context, params mode
 	return converters.ToDomainPropertySlice(mongoProperties), nil
 
 }
+
+func (r *MongoPropertyRepository) GetFilteredProperties(ctx context.Context, filter bson.M, projection bson.M, limit int64, skip int64) ([]models.Property, error) {
+	cursor, err := r.propertyCollection.Find(ctx, filter, options.Find().SetProjection(projection).SetLimit(limit).SetSkip(skip))
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+	
+	var mongoProperties []mongoModels.Property
+	if err := cursor.All(ctx, &mongoProperties); err != nil {
+		return nil, err
+	}
+
+	return converters.ToDomainPropertySlice(mongoProperties), nil
+}

@@ -72,6 +72,7 @@ func main() {
 	}
 	dealerClientService := &services.DealerClientService{
 		Repo: dealerClientRepo,
+		PropertyRepo: propertyRepo,
 	}
 	inquiryService := services.NewInquiryService(inquiryRepo)
 
