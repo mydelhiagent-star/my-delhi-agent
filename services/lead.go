@@ -9,6 +9,7 @@ import (
 	"myapp/repositories"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type LeadService struct {
@@ -63,7 +64,9 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 	propertyIDs := make([]primitive.ObjectID, 0)
 	for _, lead := range leads {
 		for _, propertyInterest := range lead.Properties {
-			propertyIDs = append(propertyIDs, propertyInterest.PropertyID)
+			if propertyID, err := primitive.ObjectIDFromHex(propertyInterest.PropertyID); err == nil {
+				propertyIDs = append(propertyIDs, propertyID)
+			}
 		}
 	}
 	if len(propertyIDs) == 0 {
@@ -80,7 +83,7 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 	}
 
 	projection := bson.M{"_id": 1}
-	properties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(objectIDs)), 0)
+	properties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(propertyIDs)), 0)
 	if err != nil {
 		return nil, err
 	}
