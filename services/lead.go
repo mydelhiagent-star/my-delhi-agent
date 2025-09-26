@@ -7,10 +7,13 @@ import (
 
 	"myapp/models"
 	"myapp/repositories"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type LeadService struct {
 	Repo repositories.LeadRepository
+	PropertyRepo repositories.PropertyRepository
 }
 
 func (s *LeadService) CreateLead(ctx context.Context, lead models.Lead) (string, error) {
@@ -52,7 +55,57 @@ func (s *LeadService) AddPropertyInterest(ctx context.Context, leadID string, pr
 }
 
 func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParams) ([]models.Lead, error) {
-	return s.Repo.GetLeads(ctx, params)
+	leads, err := s.Repo.GetLeads(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	propertyIDs := make([]primitive.ObjectID, 0)
+	for _, lead := range leads {
+		for _, propertyInterest := range lead.Properties {
+			propertyIDs = append(propertyIDs, propertyInterest.PropertyID)
+		}
+	}
+	if len(propertyIDs) == 0 {
+		return leads, nil
+	}
+
+	
+	filter := bson.M{
+		"_id": bson.M{"$in": propertyIDs},
+		"$or": bson.A{
+			bson.M{"is_deleted": true},
+			bson.M{"sold": true},
+		},
+	}
+
+	projection := bson.M{"_id": 1}
+	properties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(objectIDs)), 0)
+	if err != nil {
+		return nil, err
+	}
+
+	propertiesToRemove := make(map[string]bool)
+	for _, property := range properties {
+		propertiesToRemove[property.ID] = true
+	}
+
+	// Filter out deleted/sold property interests
+	for i := range leads {
+		var filteredProperties []models.PropertyInterest
+		
+		for _, propertyInterest := range leads[i].Properties {
+			if !propertiesToRemove[propertyInterest.PropertyID] {
+				filteredProperties = append(filteredProperties, propertyInterest)
+			}
+		}
+		
+		leads[i].Properties = filteredProperties
+	}
+
+	return leads, nil
+
+	
 }
 
 

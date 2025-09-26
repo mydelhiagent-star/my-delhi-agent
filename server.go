@@ -64,6 +64,7 @@ func main() {
 
 	leadService := &services.LeadService{
 		Repo: leadRepo,
+		PropertyRepo: propertyRepo,
 	}
 
 	propertyService := &services.PropertyService{
