@@ -21,6 +21,7 @@ type Lead struct {
 
 type PropertyInterest struct {
 	PropertyID primitive.ObjectID `json:"property_id" bson:"property_id"`
+	PropertyNumber int64    `json:"property_number" bson:"property_number"`
 	DealerID   primitive.ObjectID `json:"dealer_id" bson:"dealer_id"` // ← ADD THIS
 	Status     string             `json:"status" bson:"status"`
 	Note       string             `json:"note,omitempty" bson:"note,omitempty"`

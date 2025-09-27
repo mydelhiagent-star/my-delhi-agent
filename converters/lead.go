@@ -22,6 +22,7 @@ func ToDomainLead(mongoLead mongoModels.Lead) models.Lead {
 			ID:         prop.PropertyID.Hex(),
 			LeadID:     mongoLead.ID.Hex(),
 			PropertyID: prop.PropertyID.Hex(),
+			PropertyNumber: prop.PropertyNumber,
 			DealerID:   prop.DealerID.Hex(),
 			Status:     prop.Status,
 			Note:       prop.Note,

@@ -233,6 +233,7 @@ func (r *MongoLeadRepository) AddPropertyInterest(ctx context.Context, leadID st
 	// Convert models.PropertyInterestData to mongoModels.PropertyInterest
 	mongoPropertyInterest := mongoModels.PropertyInterest{
 		PropertyID: propertyObjectID,
+		PropertyNumber: propertyInterest.PropertyNumber,
 		DealerID:   dealerObjectID,
 		Status:     propertyInterest.Status,
 		Note:       propertyInterest.Note,

@@ -19,6 +19,7 @@ type PropertyInterest struct {
 	ID         string    `json:"id"`
 	LeadID     string    `json:"lead_id"`
 	PropertyID string    `json:"property_id"`
+	PropertyNumber int64    `json:"property_number"`
 	DealerID   string    `json:"dealer_id"`
 	Status     string    `json:"status"`
 	Note       string    `json:"note"`
@@ -34,6 +35,7 @@ type LeadQueryParams struct {
 	AadharNumber *string   `query:"aadhar_number" mongo:"aadhar_number"`
 	DealerID    *string    `query:"dealer_id" mongo:"properties.dealer_id" convert:"objectid" array:"properties"`
 	PropertyID  *string    `query:"property_id" mongo:"properties.property_id" convert:"objectid" array:"properties"`
+	PropertyNumber *int64  `query:"property_number" mongo:"properties.property_number" convert:"int64" array:"properties"`
 	Status      *string    `query:"status" mongo:"status"`
 	CreatedAt   *time.Time `query:"created_at" mongo:"created_at" convert:"date"`
 	UpdatedAt   *time.Time `query:"updated_at" mongo:"updated_at" convert:"date"`
