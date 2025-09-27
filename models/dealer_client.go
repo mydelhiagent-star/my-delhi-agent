@@ -57,6 +57,7 @@ type DealerClientQueryParams struct {
 
 	CreatedAt *time.Time `query:"created_at" mongo:"created_at" convert:"date"`
 	UpdatedAt *time.Time `query:"updated_at" mongo:"updated_at" convert:"date"`
+	PropertyInterestsIsDeleted *bool `query:"properties_is_deleted" mongo:"properties.is_deleted" array:"properties"`
 
 	BaseQueryParams
 }

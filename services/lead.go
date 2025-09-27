@@ -69,36 +69,39 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 			}
 		}
 	}
+	
 	if len(propertyIDs) == 0 {
 		return leads, nil
 	}
 
-	
+	// ✅ This query only returns properties that:
+	// 1. Exist in DB
+	// 2. Are not deleted
+	// 3. Are not sold
 	filter := bson.M{
 		"_id": bson.M{"$in": propertyIDs},
-		"$or": bson.A{
-			bson.M{"is_deleted": true},
-			bson.M{"sold": true},
-		},
+		"is_deleted": bson.M{"$ne": true},
+		"sold": bson.M{"$ne": true},
 	}
 
 	projection := bson.M{"_id": 1}
-	properties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(propertyIDs)), 0)
+	validProperties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(propertyIDs)), 0)
 	if err != nil {
 		return nil, err
 	}
 
-	propertiesToRemove := make(map[string]bool)
-	for _, property := range properties {
-		propertiesToRemove[property.ID] = true
+	// ✅ Only valid properties are in this map
+	validPropertyIDs := make(map[string]bool)
+	for _, property := range validProperties {
+		validPropertyIDs[property.ID] = true
 	}
 
-	// Filter out deleted/sold property interests
+	// ✅ Filter out PropertyInterests for invalid/deleted/sold properties
 	for i := range leads {
 		var filteredProperties []models.PropertyInterest
 		
 		for _, propertyInterest := range leads[i].Properties {
-			if !propertiesToRemove[propertyInterest.PropertyID] {
+			if validPropertyIDs[propertyInterest.PropertyID] {
 				filteredProperties = append(filteredProperties, propertyInterest)
 			}
 		}
@@ -107,8 +110,6 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 	}
 
 	return leads, nil
-
-	
 }
 
 
