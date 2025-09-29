@@ -74,10 +74,7 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 		return leads, nil
 	}
 
-	// ✅ This query only returns properties that:
-	// 1. Exist in DB
-	// 2. Are not deleted
-	// 3. Are not sold
+	
 	filter := bson.M{
 		"_id": bson.M{"$in": propertyIDs},
 		"is_deleted": bson.M{"$ne": true},
@@ -90,13 +87,12 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 		return nil, err
 	}
 
-	// ✅ Only valid properties are in this map
 	validPropertyIDs := make(map[string]bool)
 	for _, property := range validProperties {
 		validPropertyIDs[property.ID] = true
 	}
 
-	// ✅ Filter out PropertyInterests for invalid/deleted/sold properties
+	var filteredLeads []models.Lead
 	for i := range leads {
 		var filteredProperties []models.PropertyInterest
 		
@@ -107,9 +103,13 @@ func (s *LeadService) GetLeads(ctx context.Context, params models.LeadQueryParam
 		}
 		
 		leads[i].Properties = filteredProperties
+
+		if len(filteredProperties) > 0 {
+			filteredLeads = append(filteredLeads, leads[i])
+		}
 	}
 
-	return leads, nil
+	return filteredLeads, nil
 }
 
 
