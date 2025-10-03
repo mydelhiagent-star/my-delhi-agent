@@ -60,7 +60,6 @@ func (s *DealerClientService) GetDealerClients(ctx context.Context, params model
 		return dealerClients, nil
 	}
 
-	// Find deleted/sold properties
 	filter := bson.M{
 		"_id": bson.M{"$in": propertyIDs},
 		"is_deleted": bson.M{"$ne": true},
@@ -81,6 +80,8 @@ func (s *DealerClientService) GetDealerClients(ctx context.Context, params model
 		validPropertyIDs[property.ID] = true
 	}
 
+	shouldRemoveEmptyClients := params.PropertyInterestsStatus != nil
+
 	var filteredDealerClients []models.DealerClient
 	for i := range dealerClients {
 		var filteredProperties []models.DealerClientPropertyInterest
@@ -92,11 +93,15 @@ func (s *DealerClientService) GetDealerClients(ctx context.Context, params model
 		}
 		
 		dealerClients[i].PropertyInterests = filteredProperties
-		
-		
-		if len(filteredProperties) > 0 {
+
+		if shouldRemoveEmptyClients {
+			if len(filteredProperties) > 0 {
+				filteredDealerClients = append(filteredDealerClients, dealerClients[i])
+			}
+		}else{
 			filteredDealerClients = append(filteredDealerClients, dealerClients[i])
 		}
+		
 	}
 
 	return filteredDealerClients, nil
