@@ -63,42 +63,43 @@ func (s *DealerClientService) GetDealerClients(ctx context.Context, params model
 	// Find deleted/sold properties
 	filter := bson.M{
 		"_id": bson.M{"$in": propertyIDs},
-		 "$or": bson.A{
-			bson.M{"is_deleted": true},
-			bson.M{"sold": true},
-		},
+		"is_deleted": bson.M{"$ne": true},
+		"sold": bson.M{"$ne": true},
 	}
 
 	projection := bson.M{
 		"_id": 1,
 	}
 
-	properties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(propertyIDs)), 0)
+	validProperties, err := s.PropertyRepo.GetFilteredProperties(ctx, filter, projection, int64(len(propertyIDs)), 0)
 	if err != nil {
 		return nil, err
 	}
 
-	
-	propertiesToRemove := make(map[string]bool)
-	for _, property := range properties {
-		propertiesToRemove[property.ID] = true
+	validPropertyIDs := make(map[string]bool)
+	for _, property := range validProperties {
+		validPropertyIDs[property.ID] = true
 	}
 
-	
+	var filteredDealerClients []models.DealerClient
 	for i := range dealerClients {
-		var filteredInterests []models.DealerClientPropertyInterest
+		var filteredProperties []models.DealerClientPropertyInterest
 		
-		for _, interest := range dealerClients[i].PropertyInterests {
-			
-			if !propertiesToRemove[interest.PropertyID] {
-				filteredInterests = append(filteredInterests, interest)
+		for _, propertyInterest := range dealerClients[i].PropertyInterests {
+			if validPropertyIDs[propertyInterest.PropertyID] {
+				filteredProperties = append(filteredProperties, propertyInterest)
 			}
 		}
 		
-		dealerClients[i].PropertyInterests = filteredInterests
+		dealerClients[i].PropertyInterests = filteredProperties
+		
+		
+		if len(filteredProperties) > 0 {
+			filteredDealerClients = append(filteredDealerClients, dealerClients[i])
+		}
 	}
 
-	return dealerClients, nil
+	return filteredDealerClients, nil
 }
 
 
